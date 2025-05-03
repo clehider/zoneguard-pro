@@ -116,3 +116,47 @@ class SheetsService {
 
 // Exportar una instancia única (singleton)
 export const sheetsService = new SheetsService();
+
+
+const initSheet = async (sheetName) => {
+  try {
+    const response = await gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+    });
+    
+    const sheetExists = response.data.sheets.some(sheet => sheet.properties.title === sheetName);
+    
+    if (!sheetExists) {
+      await gapi.client.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+          requests: [{
+            addSheet: {
+              properties: {
+                title: sheetName,
+                gridProperties: {
+                  rowCount: 1000,
+                  columnCount: 10,
+                }
+              }
+            }
+          }]
+        }
+      });
+      
+      // Agregar encabezados
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${sheetName}!A1:H1`,
+        valueInputOption: 'RAW',
+        resource: {
+          values: [['Fecha', 'Tipo', 'Descripción', 'Latitud', 'Longitud', 'Estado', 'Asignado a', 'Comentarios']]
+        }
+      });
+    }
+    return true;
+  } catch (error) {
+    console.error('Error al inicializar hoja:', error);
+    return false;
+  }
+};

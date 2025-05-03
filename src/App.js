@@ -40,10 +40,13 @@ function App() {
 
   // Función para guardar datos (ahora usa sheetsService)
   const handleSaveIncident = async (incidentData) => {
+    // Comentamos temporalmente la verificación de autenticación
+    /*
     if (!isAuthenticated || !sheetsService.isInitialized()) {
       alert('Por favor, inicia sesión con Google primero.');
       return;
     }
+    */
 
     const values = [
       new Date().toLocaleString(), // Fecha y hora
@@ -53,7 +56,6 @@ function App() {
       incidentData.location?.lng || '', // Longitud
       incidentData.status || 'Pendiente', // Estado del incidente
       incidentData.assignedTo || '', // Asignado a
-      // Añade más campos según necesites
     ];
 
     try {
@@ -61,8 +63,9 @@ function App() {
       console.log('Incidente guardado:', result);
       alert('Incidente registrado con éxito');
       
-      // Actualizar la lista de incidentes si es necesario
-      // await loadIncidents();
+      // Actualizar la lista de incidentes
+      const updatedIncidents = await sheetsService.getRecords('Incidentes');
+      setIncidents(updatedIncidents);
     } catch (error) {
       console.error('Error al guardar:', error);
       alert(`Error al guardar el incidente: ${error.message}`);
