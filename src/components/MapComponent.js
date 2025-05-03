@@ -1,44 +1,68 @@
-import React from 'react';
-import { useLoadScript, GoogleMap, Marker } from '@react-google-maps/api';
+import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-const MapComponent = ({ incidents }) => {
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo", // Tu API key
-    libraries: ["places"]
+// Corregir el problema de los iconos de Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
+
+const LocationMarker = ({ onLocationSelect }) => {
+  const [position, setPosition] = useState(null);
+  
+  useMapEvents({
+    click(e) {
+      const pos = e.latlng;
+      setPosition(pos);
+      if (onLocationSelect) {
+        onLocationSelect(pos);
+      }
+    }
   });
 
-  const mapStyles = {
-    height: "100%",
-    width: "100%"
-  };
+  return position === null ? null : (
+    <Marker position={position}>
+      <Popup>Ubicación seleccionada</Popup>
+    </Marker>
+  );
+};
 
-  const defaultCenter = {
-    lat: -12.0464,
-    lng: -77.0428
-  };
-
-  if (loadError) return <div>Error al cargar el mapa</div>;
-  if (!isLoaded) return <div>Cargando...</div>;
+const MapComponent = ({ incidents, onLocationSelect }) => {
+  const defaultPosition = [19.4326, -99.1332];
 
   return (
-    <GoogleMap
-      mapContainerStyle={mapStyles}
+    <MapContainer
+      center={defaultPosition}
       zoom={13}
-      center={defaultCenter}
+      style={{ height: '100%', width: '100%' }}
     >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
+      
+      <LocationMarker onLocationSelect={onLocationSelect} />
+      
       {incidents.map((incident, index) => (
-        incident.location && (
-          <Marker
-            key={index}
-            position={{
-              lat: parseFloat(incident.location.lat),
-              lng: parseFloat(incident.location.lng)
-            }}
-            title={incident.type}
-          />
-        )
+        <Marker
+          key={index}
+          position={[incident.location.lat, incident.location.lng]}
+        >
+          <Popup>
+            <div>
+              <h3 className="font-bold">{incident.type}</h3>
+              <p>{incident.description}</p>
+              <p>Estado: {incident.status}</p>
+              <p>Asignado a: {incident.assignedTo}</p>
+            </div>
+          </Popup>
+        </Marker>
       ))}
-    </GoogleMap>
+    </MapContainer>
   );
 };
 

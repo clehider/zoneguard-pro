@@ -85,12 +85,27 @@ function App() {
     switch(currentModule) {
       case 'incidents':
         return (
-          <div className="flex flex-1 overflow-hidden">
-            <div className="w-1/2 h-full overflow-y-auto p-4 border-r border-gray-300">
-              <IncidentForm onSave={handleSaveIncident} />
+          <div className="flex flex-1 h-full">
+            <div className="w-1/2 overflow-y-auto" style={{ height: 'calc(100vh - 120px)' }}>
+              <div className="p-4">
+                <IncidentForm onSave={handleSaveIncident} />
+                <div className="mt-4">
+                  <IncidentList 
+                    incidents={incidents} 
+                    onIncidentSelect={(incident) => {
+                      // Manejar la selección de incidente
+                    }} 
+                  />
+                </div>
+              </div>
             </div>
-            <div className="w-1/2 h-full">
-              <MapComponent incidents={incidents} />
+            <div className="w-1/2 relative">
+              <MapComponent 
+                incidents={incidents}
+                onLocationSelect={(location) => {
+                  // Manejar la selección de ubicación
+                }}
+              />
             </div>
           </div>
         );
