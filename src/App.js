@@ -9,38 +9,28 @@ import { sheetsService } from './services/sheetsService';
 // Remove the './App.css' import since we're using Tailwind CSS
 
 function App() {
-  // Temporalmente establecemos isAuthenticated como true para desarrollo
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  // Cambiamos a false para forzar la autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [incidents, setIncidents] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
 
-  // Inicialización temporal del sheetsService
-  useEffect(() => {
-    sheetsService.init('AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfoI'); // Reemplazar con token real
-  }, []);
-  // Comentamos temporalmente las funciones de autenticación
-  /*
+  // Eliminamos el useEffect temporal que inicializaba con API Key
+
+  // Descomentamos y activamos las funciones de autenticación
   const handleAuthSuccess = (accessToken) => {
     console.log('App: Autenticación exitosa.');
-    // Inicializar el servicio de Sheets con el token
     const initialized = sheetsService.init(accessToken);
     if (initialized) {
       setIsAuthenticated(true);
-      // Opcional: Cargar datos iniciales si es necesario
-      // loadInitialData();
     } else {
       console.error("App: No se pudo inicializar SheetsService.");
-      // Manejar el error, quizás mostrar un mensaje al usuario
     }
   };
 
-  // Callback para cuando la autenticación falla
   const handleAuthFailure = (error) => {
     console.error('App: Falló la autenticación.', error);
     setIsAuthenticated(false);
-    // Limpiar cualquier estado relacionado con el usuario autenticado
   };
-  */
 
   // Función para guardar datos (ahora usa sheetsService)
   const handleSaveIncident = async (incidentData) => {
@@ -130,42 +120,47 @@ function App() {
     <div className="App flex flex-col h-screen">
       <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">ZoneGuard Pro - Panel de Control</h1>
-        {/* Comentamos temporalmente el componente de autenticación
+        {/* Activamos el componente de autenticación */}
         <GoogleAuth
           onAuthSuccess={handleAuthSuccess}
           onAuthFailure={handleAuthFailure}
         />
-        */}
       </header>
 
-      {/* Removemos temporalmente la condición de autenticación */}
-      <>
-        <nav className="bg-gray-100 p-4">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setCurrentModule('incidents')}
-              className={`px-4 py-2 rounded ${currentModule === 'incidents' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Incidentes
-            </button>
-            <button
-              onClick={() => setCurrentModule('guards')}
-              className={`px-4 py-2 rounded ${currentModule === 'guards' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Guardias
-            </button>
-            <button
-              onClick={() => setCurrentModule('zones')}
-              className={`px-4 py-2 rounded ${currentModule === 'zones' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-            >
-              Zonas
-            </button>
-          </div>
-        </nav>
-        <main className="flex-1 overflow-hidden">
-          {renderCurrentModule()}
-        </main>
-      </>
+      {/* Mostramos contenido solo si está autenticado */}
+      {isAuthenticated ? (
+        <>
+          <nav className="bg-gray-100 p-4">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setCurrentModule('incidents')}
+                className={`px-4 py-2 rounded ${currentModule === 'incidents' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                Incidentes
+              </button>
+              <button
+                onClick={() => setCurrentModule('guards')}
+                className={`px-4 py-2 rounded ${currentModule === 'guards' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                Guardias
+              </button>
+              <button
+                onClick={() => setCurrentModule('zones')}
+                className={`px-4 py-2 rounded ${currentModule === 'zones' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                Zonas
+              </button>
+            </div>
+          </nav>
+          <main className="flex-1 overflow-hidden">
+            {renderCurrentModule()}
+          </main>
+        </>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-xl">Por favor inicia sesión con Google</p>
+        </div>
+      )}
 
       <footer className="bg-gray-200 text-center p-2 text-sm">
         © 2023 ZoneGuard Pro
