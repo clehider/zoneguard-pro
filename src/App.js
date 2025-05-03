@@ -10,10 +10,14 @@ import { sheetsService } from './services/sheetsService';
 
 function App() {
   // Temporalmente establecemos isAuthenticated como true para desarrollo
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Cambio temporal
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
   const [incidents, setIncidents] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
 
+  // Inicialización temporal del sheetsService
+  useEffect(() => {
+    sheetsService.init('AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfoI'); // Reemplazar con token real
+  }, []);
   // Comentamos temporalmente las funciones de autenticación
   /*
   const handleAuthSuccess = (accessToken) => {
