@@ -16,7 +16,7 @@ const GoogleAuth = ({ onAuthSuccess, onAuthFailure }) => {
           scope: 'email profile https://www.googleapis.com/auth/spreadsheets',
           prompt: 'select_account',
           hosted_domain: 'clehider.github.io'
-        };
+        };  // <-- This semicolon was causing the error
         discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
         ux_mode: 'redirect', // Cambiado de 'popup' a 'redirect'
         cookie_policy: 'single_host_origin',
