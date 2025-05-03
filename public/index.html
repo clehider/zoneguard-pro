@@ -1,14 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://accounts.google.com data: blob: 'unsafe-inline' 'unsafe-eval';
+               script-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://accounts.google.com https://apis.google.com 'unsafe-inline' 'unsafe-eval';
+               style-src 'self' https://*.googleapis.com https://*.gstatic.com 'unsafe-inline';
+               img-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com data: blob: *;
+               frame-src 'self' https://*.google.com https://accounts.google.com https://*.gstatic.com https://content-sheets.googleapis.com;
+               connect-src 'self' https://*.google.com https://*.googleapis.com https://accounts.google.com https://*.gstatic.com https://content-sheets.googleapis.com;
+               font-src 'self' https://fonts.gstatic.com data:;"
+    />
     <title>ZoneGuard Pro</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>Necesitas habilitar JavaScript para ejecutar esta aplicación.</noscript>
     <div id="root"></div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo&libraries=places"></script>
   </body>
 </html>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo&libraries=places&loading=async"></script>
