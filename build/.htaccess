@@ -1,0 +1,11 @@
+Header set Content-Security-Policy "default-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://accounts.google.com data: blob: 'unsafe-inline' 'unsafe-eval';\
+  script-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://accounts.google.com https://apis.google.com https://www.gstatic.com/_/mss/boq-identity/_/js/ 'unsafe-inline' 'unsafe-eval';\
+  style-src 'self' https://*.googleapis.com https://*.gstatic.com 'unsafe-inline';\
+  img-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com data: blob: *;\
+  frame-src 'self' https://*.google.com https://accounts.google.com https://*.gstatic.com https://content-sheets.googleapis.com https://accounts.google.com/o/oauth2/ https://accounts.google.com/_/;\
+  connect-src 'self' https://*.google.com https://*.googleapis.com https://accounts.google.com https://*.gstatic.com https://content-sheets.googleapis.com https://accounts.google.com/_/;\
+  font-src 'self' https://fonts.gstatic.com data:"
+
+Header set X-Frame-Options "SAMEORIGIN"
+Header set X-Content-Type-Options "nosniff"
+Header set Referrer-Policy "strict-origin-when-cross-origin"

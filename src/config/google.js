@@ -1,4 +1,5 @@
-export const GOOGLE_CLIENT_ID = '19785403811-0rmm5ll7qhf52k96bbsk10f7kn8urur6.apps.googleusercontent.com';
+export const CLIENT_ID = '19785403811-0rmm5ll7qhf52k96bbsk10f7kn8urur6.apps.googleusercontent.com';
+export const CLIENT_SECRET = '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';
 export const API_KEY = 'AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo';
 
 // ID de la hoja de cálculo extraído de la URL
