@@ -4,6 +4,7 @@ import IncidentForm from './components/IncidentForm';
 import GoogleAuth from './components/GoogleAuth';
 import GuardsManager from './components/GuardsManager';
 import ZoneCreator from './components/ZoneCreator';
+import IncidentList from './components/IncidentList'; // Agregar esta línea
 import { sheetsService } from './services/sheetsService';
 // Remove the './App.css' import since we're using Tailwind CSS
 
