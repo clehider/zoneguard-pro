@@ -118,7 +118,7 @@ class SheetsService {
 export const sheetsService = new SheetsService();
 
 
-const initSheet = async (sheetName) => {
+const initSheet = async (sheetName, headers) => {
   try {
     const response = await gapi.client.sheets.spreadsheets.get({
       spreadsheetId: SPREADSHEET_ID,
@@ -136,7 +136,7 @@ const initSheet = async (sheetName) => {
                 title: sheetName,
                 gridProperties: {
                   rowCount: 1000,
-                  columnCount: 10,
+                  columnCount: headers.length,
                 }
               }
             }
@@ -147,10 +147,10 @@ const initSheet = async (sheetName) => {
       // Agregar encabezados
       await gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${sheetName}!A1:H1`,
+        range: `${sheetName}!A1:${String.fromCharCode(64 + headers.length)}1`,
         valueInputOption: 'RAW',
         resource: {
-          values: [['Fecha', 'Tipo', 'Descripción', 'Latitud', 'Longitud', 'Estado', 'Asignado a', 'Comentarios']]
+          values: [headers]
         }
       });
     }
@@ -161,7 +161,7 @@ const initSheet = async (sheetName) => {
   }
 };
 
-const init = async () => {
+const init = async (accessToken) => {
   try {
     await gapi.client.init({
       'apiKey': API_KEY,
@@ -170,10 +170,13 @@ const init = async () => {
       'scope': SCOPES
     });
     
-    // Inicializar las hojas necesarias
-    await initSheet('Incidentes');
-    await initSheet('Guardias');
-    await initSheet('Zonas');
+    // Inicializar las hojas necesarias con sus columnas
+    await initSheet('Incidentes', ['Fecha', 'Tipo', 'Descripción', 'Latitud', 'Longitud', 'Estado', 'Asignado a', 'Comentarios']);
+    await initSheet('Guardias', ['ID', 'Nombre', 'Apellido', 'Teléfono', 'Email', 'Turno', 'Zona Asignada']);
+    await initSheet('Zonas', ['ID', 'Nombre', 'Descripción', 'Latitud', 'Longitud', 'Radio (m)']);
+    
+    // Establecer el accessToken
+    this.accessToken = accessToken;
     
     return true;
   } catch (error) {
