@@ -1,55 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import MapComponent from './components/MapComponent';
 import IncidentForm from './components/IncidentForm';
-import GoogleAuth from './components/GoogleAuth';
 import GuardsManager from './components/GuardsManager';
 import ZoneCreator from './components/ZoneCreator';
-import IncidentList from './components/IncidentList'; // Agregar esta línea
+import IncidentList from './components/IncidentList';
 import { sheetsService } from './services/sheetsService';
-// Remove the './App.css' import since we're using Tailwind CSS
 
 function App() {
-  // Cambiamos a false para forzar la autenticación
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [incidents, setIncidents] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
 
-  // Eliminamos el useEffect temporal que inicializaba con API Key
-
-  // Descomentamos y activamos las funciones de autenticación
-  const handleAuthSuccess = (accessToken) => {
-    console.log('App: Autenticación exitosa.');
-    const initialized = sheetsService.init(accessToken);
-    if (initialized) {
-      setIsAuthenticated(true);
-    } else {
-      console.error("App: No se pudo inicializar SheetsService.");
-    }
-  };
-
-  const handleAuthFailure = (error) => {
-    console.error('App: Falló la autenticación.', error);
-    setIsAuthenticated(false);
-  };
-
-  // Función para guardar datos (ahora usa sheetsService)
   const handleSaveIncident = async (incidentData) => {
-    // Comentamos temporalmente la verificación de autenticación
-    /*
-    if (!isAuthenticated || !sheetsService.isInitialized()) {
-      alert('Por favor, inicia sesión con Google primero.');
-      return;
-    }
-    */
-
     const values = [
-      new Date().toLocaleString(), // Fecha y hora
-      incidentData.type || '',     // Tipo de incidente
-      incidentData.description || '', // Descripción
-      incidentData.location?.lat || '', // Latitud
-      incidentData.location?.lng || '', // Longitud
-      incidentData.status || 'Pendiente', // Estado del incidente
-      incidentData.assignedTo || '', // Asignado a
+      new Date().toLocaleString(),
+      incidentData.type || '',
+      incidentData.description || '',
+      incidentData.location?.lat || '',
+      incidentData.location?.lng || '',
+      incidentData.status || 'Pendiente',
+      incidentData.assignedTo || '',
     ];
 
     try {
@@ -57,7 +26,6 @@ function App() {
       console.log('Incidente guardado:', result);
       alert('Incidente registrado con éxito');
       
-      // Actualizar la lista de incidentes
       const updatedIncidents = await sheetsService.getRecords('Incidentes');
       setIncidents(updatedIncidents);
     } catch (error) {
@@ -66,19 +34,6 @@ function App() {
     }
   };
 
-  // Opcional: Función para cargar datos iniciales
-  // async function loadInitialData() {
-  //   if (sheetsService.isInitialized()) {
-  //     const data = await sheetsService.getRecords('Incidentes'); // Asume hoja 'Incidentes'
-  //     if (data) {
-  //       // Procesa los datos y actualiza el estado 'incidents'
-  //       console.log("Datos cargados:", data);
-  //       // setIncidents(processedData);
-  //     }
-  //   }
-  // }
-
-  // Función para renderizar el módulo actual
   const renderCurrentModule = () => {
     switch(currentModule) {
       case 'incidents':
