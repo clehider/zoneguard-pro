@@ -11,14 +11,14 @@ const GoogleAuth = ({ onAuthSuccess, onAuthFailure }) => {
     const initClient = () => {
       window.gapi.client.init({
         apiKey: 'AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo',
-        clientConfig = {
+        clientConfig: {
           client_id: '19785403811-0rmm5ll7qhf52k96bbsk10f7kn8urur6.apps.googleusercontent.com',
           scope: 'email profile https://www.googleapis.com/auth/spreadsheets',
           prompt: 'select_account',
           hosted_domain: 'clehider.github.io'
-        };  // <-- This semicolon was causing the error
+        },
         discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-        ux_mode: 'redirect', // Cambiado de 'popup' a 'redirect'
+        ux_mode: 'redirect',
         cookie_policy: 'single_host_origin',
         redirect_uri: 'https://clehider.github.io/zoneguard-pro/'
       })
