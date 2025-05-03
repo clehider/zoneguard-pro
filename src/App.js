@@ -1,0 +1,115 @@
+import React, { useState, useEffect } from 'react';
+import MapComponent from './components/MapComponent';
+import IncidentForm from './components/IncidentForm';
+import GoogleAuth from './components/GoogleAuth';
+import { sheetsService } from './services/sheetsService';
+// Remove the './App.css' import since we're using Tailwind CSS
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [incidents, setIncidents] = useState([]); // Estado para almacenar incidentes si los lees
+
+  // Callback para cuando la autenticación es exitosa
+  const handleAuthSuccess = (accessToken) => {
+    console.log('App: Autenticación exitosa.');
+    // Inicializar el servicio de Sheets con el token
+    const initialized = sheetsService.init(accessToken);
+    if (initialized) {
+      setIsAuthenticated(true);
+      // Opcional: Cargar datos iniciales si es necesario
+      // loadInitialData();
+    } else {
+      console.error("App: No se pudo inicializar SheetsService.");
+      // Manejar el error, quizás mostrar un mensaje al usuario
+    }
+  };
+
+  // Callback para cuando la autenticación falla
+  const handleAuthFailure = (error) => {
+    console.error('App: Falló la autenticación.', error);
+    setIsAuthenticated(false);
+    // Limpiar cualquier estado relacionado con el usuario autenticado
+  };
+
+  // Función para guardar datos (ahora usa sheetsService)
+  const handleSaveIncident = async (incidentData) => {
+    if (!isAuthenticated || !sheetsService.isInitialized()) {
+      alert('Por favor, inicia sesión con Google primero.');
+      return;
+    }
+
+    const values = [
+      new Date().toLocaleString(), // Fecha y hora
+      incidentData.type || '',     // Tipo de incidente
+      incidentData.description || '', // Descripción
+      incidentData.location?.lat || '', // Latitud
+      incidentData.location?.lng || '', // Longitud
+      incidentData.status || 'Pendiente', // Estado del incidente
+      incidentData.assignedTo || '', // Asignado a
+      // Añade más campos según necesites
+    ];
+
+    try {
+      const result = await sheetsService.addRecord('Incidentes', values);
+      console.log('Incidente guardado:', result);
+      alert('Incidente registrado con éxito');
+      
+      // Actualizar la lista de incidentes si es necesario
+      // await loadIncidents();
+    } catch (error) {
+      console.error('Error al guardar:', error);
+      alert(`Error al guardar el incidente: ${error.message}`);
+    }
+  };
+
+  // Opcional: Función para cargar datos iniciales
+  // async function loadInitialData() {
+  //   if (sheetsService.isInitialized()) {
+  //     const data = await sheetsService.getRecords('Incidentes'); // Asume hoja 'Incidentes'
+  //     if (data) {
+  //       // Procesa los datos y actualiza el estado 'incidents'
+  //       console.log("Datos cargados:", data);
+  //       // setIncidents(processedData);
+  //     }
+  //   }
+  // }
+
+  return (
+    <div className="App flex flex-col h-screen">
+      <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
+        <h1 className="text-xl font-bold">ZoneGuard Pro - Panel de Control</h1>
+        {/* Renderizar el componente de autenticación */}
+        <GoogleAuth
+          onAuthSuccess={handleAuthSuccess}
+          onAuthFailure={handleAuthFailure}
+        />
+      </header>
+
+      {isAuthenticated ? (
+        // Mostrar contenido principal solo si está autenticado
+        <main className="flex flex-1 overflow-hidden">
+          <div className="w-1/2 h-full overflow-y-auto p-4 border-r border-gray-300">
+            <IncidentForm onSave={handleSaveIncident} />
+            {/* Aquí podrías mostrar una lista de incidentes si los cargas */}
+          </div>
+          <div className="w-1/2 h-full">
+            <MapComponent incidents={incidents} /> {/* Pasa los incidentes al mapa si los cargas */}
+          </div>
+        </main>
+      ) : (
+        // Mensaje para iniciar sesión
+        <div className="flex justify-center items-center flex-1">
+          <p className="text-lg">Por favor, inicia sesión con Google para continuar.</p>
+        </div>
+      )}
+
+      <footer className="bg-gray-200 text-center p-2 text-sm">
+        © 2023 ZoneGuard Pro
+      </footer>
+    </div>
+  );
+}
+
+export default App;
+
+// DONE
