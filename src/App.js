@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import MapComponent from './components/MapComponent';
 import IncidentForm from './components/IncidentForm';
 import GoogleAuth from './components/GoogleAuth';
+import GuardsManager from './components/GuardsManager';
+import ZoneCreator from './components/ZoneCreator';
 import { sheetsService } from './services/sheetsService';
 // Remove the './App.css' import since we're using Tailwind CSS
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [incidents, setIncidents] = useState([]); // Estado para almacenar incidentes si los lees
+  const [incidents, setIncidents] = useState([]);
+  const [currentModule, setCurrentModule] = useState('incidents'); // Nuevo estado para controlar el módulo activo
 
   // Callback para cuando la autenticación es exitosa
   const handleAuthSuccess = (accessToken) => {
@@ -74,11 +77,33 @@ function App() {
   //   }
   // }
 
+  // Función para renderizar el módulo actual
+  const renderCurrentModule = () => {
+    switch(currentModule) {
+      case 'incidents':
+        return (
+          <div className="flex flex-1 overflow-hidden">
+            <div className="w-1/2 h-full overflow-y-auto p-4 border-r border-gray-300">
+              <IncidentForm onSave={handleSaveIncident} />
+            </div>
+            <div className="w-1/2 h-full">
+              <MapComponent incidents={incidents} />
+            </div>
+          </div>
+        );
+      case 'guards':
+        return <GuardsManager guards={[]} setGuards={() => {}} saveData={() => {}} />;
+      case 'zones':
+        return <ZoneCreator zones={[]} setZones={() => {}} saveData={() => {}} />;
+      default:
+        return <div>Seleccione un módulo</div>;
+    }
+  };
+
   return (
     <div className="App flex flex-col h-screen">
       <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">ZoneGuard Pro - Panel de Control</h1>
-        {/* Renderizar el componente de autenticación */}
         <GoogleAuth
           onAuthSuccess={handleAuthSuccess}
           onAuthFailure={handleAuthFailure}
@@ -86,18 +111,34 @@ function App() {
       </header>
 
       {isAuthenticated ? (
-        // Mostrar contenido principal solo si está autenticado
-        <main className="flex flex-1 overflow-hidden">
-          <div className="w-1/2 h-full overflow-y-auto p-4 border-r border-gray-300">
-            <IncidentForm onSave={handleSaveIncident} />
-            {/* Aquí podrías mostrar una lista de incidentes si los cargas */}
-          </div>
-          <div className="w-1/2 h-full">
-            <MapComponent incidents={incidents} /> {/* Pasa los incidentes al mapa si los cargas */}
-          </div>
-        </main>
+        <>
+          <nav className="bg-gray-100 p-4">
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setCurrentModule('incidents')}
+                className={`px-4 py-2 rounded ${currentModule === 'incidents' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                Incidentes
+              </button>
+              <button
+                onClick={() => setCurrentModule('guards')}
+                className={`px-4 py-2 rounded ${currentModule === 'guards' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                Guardias
+              </button>
+              <button
+                onClick={() => setCurrentModule('zones')}
+                className={`px-4 py-2 rounded ${currentModule === 'zones' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                Zonas
+              </button>
+            </div>
+          </nav>
+          <main className="flex-1 overflow-hidden">
+            {renderCurrentModule()}
+          </main>
+        </>
       ) : (
-        // Mensaje para iniciar sesión
         <div className="flex justify-center items-center flex-1">
           <p className="text-lg">Por favor, inicia sesión con Google para continuar.</p>
         </div>
