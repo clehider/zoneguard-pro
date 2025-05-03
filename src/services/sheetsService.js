@@ -160,3 +160,24 @@ const initSheet = async (sheetName) => {
     return false;
   }
 };
+
+const init = async () => {
+  try {
+    await gapi.client.init({
+      'apiKey': API_KEY,
+      'discoveryDocs': DISCOVERY_DOCS,
+      'clientId': CLIENT_ID,
+      'scope': SCOPES
+    });
+    
+    // Inicializar las hojas necesarias
+    await initSheet('Incidentes');
+    await initSheet('Guardias');
+    await initSheet('Zonas');
+    
+    return true;
+  } catch (error) {
+    console.error('Error al inicializar SheetsService:', error);
+    return false;
+  }
+};
