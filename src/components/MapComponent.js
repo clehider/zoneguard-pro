@@ -21,6 +21,14 @@ const LocationMarker = ({ onLocationSelect }) => {
       if (onLocationSelect) {
         onLocationSelect(pos);
       }
+    },
+    dragend() {
+      const map = useMap();
+      const center = map.getCenter();
+      setPosition(center);
+      if (onLocationSelect) {
+        onLocationSelect(center);
+      }
     }
   });
 
@@ -33,12 +41,17 @@ const LocationMarker = ({ onLocationSelect }) => {
 
 const MapComponent = ({ incidents, onLocationSelect }) => {
   const defaultPosition = [19.4326, -99.1332];
+  const [map, setMap] = useState(null);
 
   return (
     <MapContainer
       center={defaultPosition}
       zoom={13}
       style={{ height: '100%', width: '100%' }}
+      whenCreated={setMap}
+      scrollWheelZoom={true}
+      doubleClickZoom={true}
+      dragging={true}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
