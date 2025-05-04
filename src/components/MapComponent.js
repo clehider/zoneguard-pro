@@ -23,7 +23,7 @@ const LocationMarker = ({ onLocationSelect }) => {
       }
     },
     dragend() {
-      const map = useMap();
+      const map = this; // Cambiar useMap() por this
       const center = map.getCenter();
       setPosition(center);
       if (onLocationSelect) {
