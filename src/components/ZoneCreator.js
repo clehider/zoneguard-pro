@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LeafletMap from './LeafletMap';
 
 const ZoneCreator = ({ zones, setZones, saveData, apiKey }) => {
@@ -116,19 +116,6 @@ const ZoneCreator = ({ zones, setZones, saveData, apiKey }) => {
           onMapClick={handleMapClick}
           className="h-96"
         />
-        <div className="flex flex-col h-full overflow-y-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 overflow-y-auto">
-              {/* Formulario aquí */}
-            </div>
-            <div className="relative">
-              <MapComponent 
-                onLocationSelect={handleLocationSelect}
-                incidents={[]}
-              />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
