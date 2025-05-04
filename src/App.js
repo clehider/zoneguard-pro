@@ -5,22 +5,10 @@ import GuardsManager from './components/GuardsManager';
 import ZoneCreator from './components/ZoneCreator';
 import IncidentList from './components/IncidentList';
 import { sheetsService } from './services/sheetsService';
-import GoogleAuth from './components/GoogleAuth';
 
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const handleAuthSuccess = (userData) => {
-    console.log('Authentication successful:', userData);
-    setIsAuthenticated(true);
-  };
-
-  const handleAuthFailure = (error) => {
-    console.error('Authentication failed:', error);
-    setIsAuthenticated(false);
-  };
 
   const handleSaveIncident = async (incidentData) => {
     const values = [
@@ -85,49 +73,36 @@ function App() {
 
   return (
     <div className="App flex flex-col h-screen">
-      <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
+      <header className="bg-gray-800 text-white p-4">
         <h1 className="text-xl font-bold">ZoneGuard Pro - Panel de Control</h1>
-        {/* Activamos el componente de autenticación */}
-        <GoogleAuth 
-          onAuthSuccess={handleAuthSuccess}
-          onAuthFailure={handleAuthFailure}
-        />
       </header>
 
-      {/* Mostramos contenido solo si está autenticado */}
-      {isAuthenticated ? (
-        <>
-          <nav className="bg-gray-100 p-4">
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setCurrentModule('incidents')}
-                className={`px-4 py-2 rounded ${currentModule === 'incidents' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-              >
-                Incidentes
-              </button>
-              <button
-                onClick={() => setCurrentModule('guards')}
-                className={`px-4 py-2 rounded ${currentModule === 'guards' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-              >
-                Guardias
-              </button>
-              <button
-                onClick={() => setCurrentModule('zones')}
-                className={`px-4 py-2 rounded ${currentModule === 'zones' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-              >
-                Zonas
-              </button>
-            </div>
-          </nav>
-          <main className="flex-1 overflow-hidden">
-            {renderCurrentModule()}
-          </main>
-        </>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-xl">Por favor inicia sesión con Google</p>
+      <nav className="bg-gray-100 p-4">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setCurrentModule('incidents')}
+            className={`px-4 py-2 rounded ${currentModule === 'incidents' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Incidentes
+          </button>
+          <button
+            onClick={() => setCurrentModule('guards')}
+            className={`px-4 py-2 rounded ${currentModule === 'guards' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Guardias
+          </button>
+          <button
+            onClick={() => setCurrentModule('zones')}
+            className={`px-4 py-2 rounded ${currentModule === 'zones' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          >
+            Zonas
+          </button>
         </div>
-      )}
+      </nav>
+
+      <main className="flex-1 overflow-hidden">
+        {renderCurrentModule()}
+      </main>
 
       <footer className="bg-gray-200 text-center p-2 text-sm">
         © 2023 ZoneGuard Pro
