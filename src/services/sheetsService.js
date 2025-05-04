@@ -11,8 +11,9 @@ const SHEETS_API_URL = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 class SheetsService {
   constructor() {
-    this.accessToken = 'AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo'; // Tu API Key real
+    this.accessToken = 'TU_TOKEN_DE_ACCESO_OAUTH2'; // Reemplazar con token real
     this.spreadsheetId = '18p6GZI13OgUssecIH21PjPvApTAa9VOWnEHGYfp9EEs';
+    this.apiKey = 'AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo'; // Tu API Key real
     console.log('SheetsService inicializado correctamente');
   }
 
