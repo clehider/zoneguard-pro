@@ -52,14 +52,10 @@ const MapComponent = ({ incidents, onLocationSelect }) => {
       scrollWheelZoom={true}
       doubleClickZoom={true}
       dragging={true}
-      // Asegúrate de tener estas configuraciones en tu componente de mapa
-      const mapOptions = {
-        draggable: true,
-        zoomControl: true,
-        scrollwheel: true,
-        disableDoubleClickZoom: false,
-        gestureHandling: 'greedy'
-      };
+      zoomControl={true}
+      keyboard={true}
+      touchZoom={true}
+      boxZoom={true}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
