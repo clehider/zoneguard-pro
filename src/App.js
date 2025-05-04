@@ -5,10 +5,22 @@ import GuardsManager from './components/GuardsManager';
 import ZoneCreator from './components/ZoneCreator';
 import IncidentList from './components/IncidentList';
 import { sheetsService } from './services/sheetsService';
+import GoogleAuth from './components/GoogleAuth';
 
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleAuthSuccess = (userData) => {
+    console.log('Authentication successful:', userData);
+    setIsAuthenticated(true);
+  };
+
+  const handleAuthFailure = (error) => {
+    console.error('Authentication failed:', error);
+    setIsAuthenticated(false);
+  };
 
   const handleSaveIncident = async (incidentData) => {
     const values = [
@@ -76,7 +88,7 @@ function App() {
       <header className="bg-gray-800 text-white p-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">ZoneGuard Pro - Panel de Control</h1>
         {/* Activamos el componente de autenticación */}
-        <GoogleAuth
+        <GoogleAuth 
           onAuthSuccess={handleAuthSuccess}
           onAuthFailure={handleAuthFailure}
         />
