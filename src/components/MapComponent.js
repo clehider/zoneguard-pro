@@ -16,18 +16,13 @@ const LocationMarker = ({ onLocationSelect }) => {
   
   useMapEvents({
     click(e) {
-      const pos = e.latlng;
+      const pos = {
+        lat: e.latlng.lat,
+        lng: e.latlng.lng
+      };
       setPosition(pos);
       if (onLocationSelect) {
         onLocationSelect(pos);
-      }
-    },
-    dragend() {
-      const map = this; // Cambiar useMap() por this
-      const center = map.getCenter();
-      setPosition(center);
-      if (onLocationSelect) {
-        onLocationSelect(center);
       }
     }
   });

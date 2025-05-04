@@ -180,4 +180,5 @@ class SheetsService {
    }
 }
 
-export default new SheetsService();
+// Change the export statement to export the class instance as a named export
+export const sheetsService = new SheetsService();
