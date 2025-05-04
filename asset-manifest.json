@@ -1,11 +1,11 @@
 {
   "files": {
     "main.css": "/zoneguard-pro/static/css/main.c01acf11.css",
-    "main.js": "/zoneguard-pro/static/js/main.c4aa102e.js",
+    "main.js": "/zoneguard-pro/static/js/main.d6bb2418.js",
     "index.html": "/zoneguard-pro/index.html"
   },
   "entrypoints": [
     "static/css/main.c01acf11.css",
-    "static/js/main.c4aa102e.js"
+    "static/js/main.d6bb2418.js"
   ]
 }
