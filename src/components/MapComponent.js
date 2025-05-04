@@ -47,9 +47,13 @@ const MapComponent = ({ incidents, onLocationSelect }) => {
     <MapContainer
       center={defaultPosition}
       zoom={13}
-      style={{ height: '100%', width: '100%' }}
+      style={{ 
+        height: '400px',  // Altura fija en lugar de 100%
+        width: '100%',
+        maxHeight: '50vh' // Máximo 50% de la altura de la ventana
+      }}
       whenCreated={setMap}
-      scrollWheelZoom={true}
+      scrollWheelZoom={false} // Desactivar zoom con rueda del mouse
       doubleClickZoom={true}
       dragging={true}
       zoomControl={true}

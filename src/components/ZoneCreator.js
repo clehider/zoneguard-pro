@@ -116,16 +116,18 @@ const ZoneCreator = ({ zones, setZones, saveData, apiKey }) => {
           onMapClick={handleMapClick}
           className="h-96"
         />
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-          {zones.map(zone => (
-            <div key={zone.id} className="border p-4 rounded-lg hover:bg-gray-50">
-              <h3 className="font-bold text-lg">{zone.name}</h3>
-              <p className="text-gray-600">{zone.description}</p>
-              <p className="text-sm text-gray-500 mt-2">
-                {zone.location.lat.toFixed(4)}, {zone.location.lng.toFixed(4)}
-              </p>
+        <div className="flex flex-col h-full overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 overflow-y-auto">
+              {/* Formulario aquí */}
             </div>
-          ))}
+            <div className="relative">
+              <MapComponent 
+                onLocationSelect={handleLocationSelect}
+                incidents={[]}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
