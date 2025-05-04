@@ -55,67 +55,71 @@ const ZoneCreator = ({ zones, setZones, saveData, apiKey }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Crear Nueva Zona</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 mb-2">Nombre de la Zona</label>
-            <input
-              type="text"
-              value={zoneName}
-              onChange={(e) => setZoneName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-gray-700 mb-2">Descripción</label>
-            <textarea
-              value={zoneDescription}
-              onChange={(e) => setZoneDescription(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows="3"
-            />
-          </div>
-          
-          <div>
-            <button
-              type="button"
-              onClick={getLocation}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Usar Mi Ubicación
-            </button>
+    <div className="flex flex-col md:flex-row h-[calc(100vh-180px)] gap-4 overflow-hidden">
+      <div className="md:w-1/2 overflow-y-auto p-4">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold mb-4">Crear Nueva Zona</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-gray-700 mb-2">Nombre de la Zona</label>
+              <input
+                type="text"
+                value={zoneName}
+                onChange={(e) => setZoneName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
             
-            {currentLocation && (
-              <div className="mt-2 p-3 bg-blue-50 rounded">
-                <p className="text-sm text-blue-800">
-                  Ubicación seleccionada: {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
-                </p>
-              </div>
-            )}
-          </div>
-          
-          <button
-            type="submit"
-            className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-            disabled={!currentLocation}
-          >
-            Guardar Zona
-          </button>
-        </form>
+            <div>
+              <label className="block text-gray-700 mb-2">Descripción</label>
+              <textarea
+                value={zoneDescription}
+                onChange={(e) => setZoneDescription(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows="3"
+              />
+            </div>
+            
+            <div>
+              <button
+                type="button"
+                onClick={getLocation}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Usar Mi Ubicación
+              </button>
+              
+              {currentLocation && (
+                <div className="mt-2 p-3 bg-blue-50 rounded">
+                  <p className="text-sm text-blue-800">
+                    Ubicación seleccionada: {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+              disabled={!currentLocation}
+            >
+              Guardar Zona
+            </button>
+          </form>
+        </div>
       </div>
       
-      <div className="bg-white p-6 rounded-lg shadow">
-        <LeafletMap 
-          center={mapCenter} 
-          zoom={15}
-          points={zones}
-          onMapClick={handleMapClick}
-          className="h-96"
-        />
+      <div className="md:w-1/2 h-full">
+        <div className="bg-white p-6 rounded-lg shadow h-full">
+          <LeafletMap 
+            center={mapCenter} 
+            zoom={15}
+            points={zones}
+            onMapClick={handleMapClick}
+            className="h-full w-full"
+          />
+        </div>
       </div>
     </div>
   );
