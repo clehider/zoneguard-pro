@@ -81,19 +81,19 @@ function App() {
         <div className="flex space-x-4">
           <button
             onClick={() => setCurrentModule('incidents')}
-            className={`px-4 py-2 rounded ${currentModule === 'incidents' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`px-4 py-2 rounded font-medium ${currentModule === 'incidents' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
           >
             Incidentes
           </button>
           <button
             onClick={() => setCurrentModule('guards')}
-            className={`px-4 py-2 rounded ${currentModule === 'guards' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`px-4 py-2 rounded font-medium ${currentModule === 'guards' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
           >
             Guardias
           </button>
           <button
             onClick={() => setCurrentModule('zones')}
-            className={`px-4 py-2 rounded ${currentModule === 'zones' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            className={`px-4 py-2 rounded font-medium ${currentModule === 'zones' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
           >
             Zonas
           </button>

@@ -16,6 +16,7 @@
     "dotenv": "^16.0.0",
     "googleapis": "^105.0.0",
     "install": "^0.13.0",
+    "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "postcss": "^8",
     "react": "^18.0.0",

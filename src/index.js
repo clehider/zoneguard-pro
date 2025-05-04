@@ -7,8 +7,8 @@ import './index.css';
 const container = document.getElementById('root');
 const root = createRoot(container); // Crear root
 
-// Reemplaza 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com' con tu Client ID real
-const googleClientId = 'TU_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+// Reemplaza con tu Client ID real de Google Cloud Console
+const googleClientId = '19785403811-0rmm5ll7qhf52k96bbsk10f7kn8urur6.apps.googleusercontent.com';
 
 root.render(
   <React.StrictMode>
