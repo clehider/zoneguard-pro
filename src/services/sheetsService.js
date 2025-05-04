@@ -11,10 +11,24 @@ const SHEETS_API_URL = 'https://sheets.googleapis.com/v4/spreadsheets';
 
 class SheetsService {
   constructor() {
-    this.accessToken = 'AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo'; // Token temporal
+    this.accessToken = null;
     this.spreadsheetId = SPREADSHEET_ID;
-    this.apiKey = API_KEY;
+    this.apiKey = 'AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo'; // Tu API Key real
     console.log('SheetsService inicializado con API Key');
+  }
+
+  async init() {
+    try {
+      await gapi.client.init({
+        apiKey: this.apiKey,
+        discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+        scope: 'https://www.googleapis.com/auth/spreadsheets'
+      });
+      return true;
+    } catch (error) {
+      console.error('Error al inicializar SheetsService:', error);
+      return false;
+    }
   }
 
   // Método para inicializar el servicio con el token
