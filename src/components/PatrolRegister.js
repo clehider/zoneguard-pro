@@ -21,7 +21,7 @@ const PatrolRegister = ({ location }) => {
     };
 
     try {
-      await googleSheetsService.addRecord('Patrullas', patrolData);
+      await addDoc(collection(db, 'patrullas'), patrolData);
       setObservation('');
       alert('Registro guardado exitosamente');
     } catch (error) {

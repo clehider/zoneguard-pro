@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { RoundReports } from './RoundReports';
 
 const RoundValidator = ({ guards, zones, points }) => {
   const [selectedGuard, setSelectedGuard] = useState('');
@@ -52,6 +55,9 @@ const RoundValidator = ({ guards, zones, points }) => {
       };
 
       try {
+        // Guardar en Firebase
+        await addDoc(collection(db, 'validations'), validation);
+        
         setValidatedPoints([...validatedPoints, selectedPoint.id]);
         alert('¡Punto validado correctamente!');
         
@@ -60,6 +66,7 @@ const RoundValidator = ({ guards, zones, points }) => {
         const nextPoint = zonePoints.find(p => !validatedPoints.includes(p.id));
         setSelectedPoint(nextPoint || null);
       } catch (error) {
+        console.error('Error al validar punto:', error);
         alert('Error al validar el punto');
       }
     } else {
@@ -146,19 +153,12 @@ const RoundValidator = ({ guards, zones, points }) => {
             )}
 
             {validatedPoints.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Puntos Validados:</h3>
-                <div className="space-y-2">
-                  {validatedPoints.map(pointId => {
-                    const point = points.find(p => p.id === pointId);
-                    return point ? (
-                      <div key={pointId} className="bg-green-50 p-2 rounded">
-                        <p className="text-sm">{point.name}</p>
-                      </div>
-                    ) : null;
-                  })}
-                </div>
-              </div>
+              <RoundReports
+                validatedPoints={validatedPoints}
+                guards={guards}
+                zones={zones}
+                points={points}
+              />
             )}
           </div>
         </div>

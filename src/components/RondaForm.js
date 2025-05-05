@@ -22,11 +22,15 @@ const RondaForm = ({ onSubmit }) => {
       longitud: ''
     };
 
-    const success = await sheetsService.addRonda(rondaData);
-    if (success) {
+    try {
+      await addDoc(collection(db, 'rondas'), rondaData);
       setGuardia('');
       setNotas('');
       onSubmit?.(rondaData);
+      alert('Ronda registrada con éxito');
+    } catch (error) {
+      console.error('Error al registrar ronda:', error);
+      alert('Error al registrar la ronda');
     }
   };
 
