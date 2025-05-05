@@ -3,17 +3,20 @@ import MapComponent from './components/MapComponent';
 import IncidentForm from './components/IncidentForm';
 import GuardsManager from './components/GuardsManager';
 import ZoneCreator from './components/ZoneCreator';
+import PointCreator from './components/PointCreator';
 import IncidentList from './components/IncidentList';
 import { incidentService } from './services/incidentService';
 import { zoneService } from './services/zoneService';
 import { guardService } from './services/guardService';
-import './config/firebase'; // Añade esta línea al inicio
+import { pointService } from './services/pointService';
+import './config/firebase';
 
 
 function App() {
   const [incidents, setIncidents] = useState([]);
   const [zones, setZones] = useState([]);
   const [guards, setGuards] = useState([]);
+  const [points, setPoints] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
   
   useEffect(() => {
@@ -84,6 +87,18 @@ function App() {
     }
   };
 
+  const handleSavePoint = async (pointData) => {
+    try {
+      await pointService.addPoint(pointData);
+      const updatedPoints = await pointService.getPoints();
+      setPoints(updatedPoints);
+      alert('Punto registrado con éxito');
+    } catch (error) {
+      console.error('Error al guardar punto:', error);
+      alert(`Error al guardar el punto: ${error.message}`);
+    }
+  };
+
   const renderCurrentModule = () => {
     switch(currentModule) {
       case 'incidents':
@@ -124,6 +139,13 @@ function App() {
           setZones={setZones} 
           saveData={handleSaveZone} 
         />;
+      case 'points':
+        return <PointCreator 
+          points={points}
+          zones={zones}
+          setPoints={setPoints}
+          saveData={handleSavePoint}
+        />;
       default:
         return <div>Seleccione un módulo</div>;
     }
@@ -154,6 +176,12 @@ function App() {
             className={`px-4 py-2 rounded font-medium ${currentModule === 'zones' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
           >
             Zonas
+          </button>
+          <button
+            onClick={() => setCurrentModule('points')}
+            className={`px-4 py-2 rounded font-medium ${currentModule === 'points' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+          >
+            Puntos
           </button>
         </div>
       </nav>
