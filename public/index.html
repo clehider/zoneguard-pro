@@ -2,20 +2,17 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="ZoneGuard Pro - Sistema de Control de Rondas" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <title>ZoneGuard Pro</title>
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self' https://*.googleapis.com https://*.gstatic.com;
-      script-src 'self' 'unsafe-inline' https://*.googleapis.com https://accounts.google.com;
-      connect-src 'self' https://*.googleapis.com;
-      img-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://*.openstreetmap.org;
-      style-src 'self' 'unsafe-inline';
-      frame-src 'self' https://accounts.google.com;
-    ">
   </head>
   <body>
     <noscript>Necesitas habilitar JavaScript para ejecutar esta aplicación.</noscript>
     <div id="root"></div>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo&libraries=places&loading=async"></script>
   </body>
 </html>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAgLNdE8AzuxsQL4hzKg94Z65cFuNWTQfo&libraries=places&loading=async"></script>

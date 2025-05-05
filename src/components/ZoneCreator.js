@@ -1,72 +1,77 @@
 import React, { useState } from 'react';
-import LeafletMap from './LeafletMap';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 
-const ZoneCreator = ({ zones, setZones, saveData, apiKey }) => {
-  const [zoneName, setZoneName] = useState('');
-  const [zoneDescription, setZoneDescription] = useState('');
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [mapCenter, setMapCenter] = useState({ lat: -12.0464, lng: -77.0428 });
+const ZoneCreator = ({ zones = [], setZones, saveData }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    location: null
+  });
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const loc = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          setCurrentLocation(loc);
-          setMapCenter(loc);
-        },
-        (error) => alert("Error obteniendo ubicación: " + error.message)
-      );
-    } else {
-      alert("Geolocalización no soportada por este navegador");
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleLocationSelect = (location) => {
+    setFormData(prev => ({
+      ...prev,
+      location: {
+        lat: location.lat,
+        lng: location.lng
+      }
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.location) {
+      alert('Por favor seleccione una ubicación en el mapa');
+      return;
+    }
+    try {
+      await saveData(formData);
+      setFormData({
+        name: '',
+        description: '',
+        location: null
+      });
+    } catch (error) {
+      console.error('Error al guardar zona:', error);
+      alert('Error al guardar la zona');
     }
   };
 
-  const handleMapClick = (e) => {
-    setCurrentLocation({
-      lat: e.latLng.lat(),
-      lng: e.latLng.lng()
+  // Componente para manejar eventos del mapa
+  function MapEvents({ onLocationSelect }) {
+    useMapEvents({
+      click: (e) => {
+        onLocationSelect({
+          lat: e.latlng.lat,
+          lng: e.latlng.lng
+        });
+      },
     });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!zoneName || !currentLocation) return;
-
-    const newZone = {
-      id: Date.now(),
-      name: zoneName,
-      description: zoneDescription,
-      location: currentLocation,
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedZones = [...zones, newZone];
-    setZones(updatedZones);
-    saveData('zones', updatedZones);
-    
-    // Reset form
-    setZoneName('');
-    setZoneDescription('');
-    setCurrentLocation(null);
-  };
+    return null;
+  }
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-180px)] gap-4 overflow-hidden">
-      <div className="md:w-1/2 overflow-y-auto p-4">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Crear Nueva Zona</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Crear Nueva Zona</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <div>
               <label className="block text-gray-700 mb-2">Nombre de la Zona</label>
               <input
                 type="text"
-                value={zoneName}
-                onChange={(e) => setZoneName(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-gray-300 rounded"
                 required
               />
             </div>
@@ -74,51 +79,74 @@ const ZoneCreator = ({ zones, setZones, saveData, apiKey }) => {
             <div>
               <label className="block text-gray-700 mb-2">Descripción</label>
               <textarea
-                value={zoneDescription}
-                onChange={(e) => setZoneDescription(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-gray-300 rounded"
                 rows="3"
+                required
               />
             </div>
-            
+
             <div>
-              <button
-                type="button"
-                onClick={getLocation}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              >
-                Usar Mi Ubicación
-              </button>
-              
-              {currentLocation && (
-                <div className="mt-2 p-3 bg-blue-50 rounded">
-                  <p className="text-sm text-blue-800">
-                    Ubicación seleccionada: {currentLocation.lat.toFixed(6)}, {currentLocation.lng.toFixed(6)}
-                  </p>
-                </div>
+              <label className="block text-gray-700 mb-2">Ubicación</label>
+              {formData.location ? (
+                <p className="text-sm text-gray-600">
+                  Lat: {formData.location.lat.toFixed(6)}, 
+                  Lng: {formData.location.lng.toFixed(6)}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500">Haga clic en el mapa para seleccionar ubicación</p>
               )}
             </div>
             
             <button
               type="submit"
-              className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
-              disabled={!currentLocation}
+              className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
             >
               Guardar Zona
             </button>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
-      
-      <div className="md:w-1/2 h-full">
-        <div className="bg-white p-6 rounded-lg shadow h-full">
-          <LeafletMap 
-            center={mapCenter} 
-            zoom={15}
-            points={zones}
-            onMapClick={handleMapClick}
-            className="h-full w-full"
-          />
+
+      <div className="bg-white p-6 rounded-lg shadow">
+        <div style={{ height: '400px' }}>
+          <MapContainer
+            center={[-17.755607, -63.162082]}
+            zoom={13}
+            style={{ height: '100%', width: '100%' }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            />
+            <MapEvents onLocationSelect={handleLocationSelect} />
+            {formData.location && (
+              <Marker position={[formData.location.lat, formData.location.lng]} />
+            )}
+            {zones.map((zone, index) => (
+              zone.location && (
+                <Marker
+                  key={zone.id || index}
+                  position={[zone.location.lat, zone.location.lng]}
+                  title={zone.name}
+                />
+              )
+            ))}
+          </MapContainer>
+        </div>
+
+        <div className="mt-4">
+          <h3 className="font-semibold mb-2">Zonas Registradas</h3>
+          <div className="space-y-2">
+            {zones.map(zone => (
+              <div key={zone.id} className="border p-3 rounded">
+                <p className="font-medium">{zone.name}</p>
+                <p className="text-sm text-gray-600">{zone.description}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

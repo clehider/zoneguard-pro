@@ -1,37 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MapComponent from './components/MapComponent';
 import IncidentForm from './components/IncidentForm';
 import GuardsManager from './components/GuardsManager';
 import ZoneCreator from './components/ZoneCreator';
 import IncidentList from './components/IncidentList';
-import { sheetsService } from './services/sheetsService';
+import { incidentService } from './services/incidentService';
+import { zoneService } from './services/zoneService';
+import { guardService } from './services/guardService';
+import './config/firebase'; // Añade esta línea al inicio
 
 
 function App() {
   const [incidents, setIncidents] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [guards, setGuards] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
+  
+  useEffect(() => {
+    let isMounted = true;
+  
+    const initializeApp = async () => {
+      try {
+        console.log('Iniciando aplicación...');
+        if (isMounted) {
+          const [updatedIncidents, updatedZones, updatedGuards] = await Promise.all([
+            incidentService.getIncidents(),
+            zoneService.getZones(),
+            guardService.getGuards()
+          ]);
+          
+          setIncidents(updatedIncidents);
+          setZones(updatedZones);
+          setGuards(updatedGuards);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error('Error al inicializar la aplicación:', error);
+          alert('Error al cargar la aplicación. Por favor, recarga la página.');
+        }
+      }
+    };
+  
+    initializeApp();
+  
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSaveIncident = async (incidentData) => {
-    const values = [
-      new Date().toLocaleString(),
-      incidentData.type || '',
-      incidentData.description || '',
-      incidentData.location?.lat || '',
-      incidentData.location?.lng || '',
-      incidentData.status || 'Pendiente',
-      incidentData.assignedTo || '',
-    ];
-
     try {
-      const result = await sheetsService.addRecord('Incidentes', values);
-      console.log('Incidente guardado:', result);
-      alert('Incidente registrado con éxito');
-      
-      const updatedIncidents = await sheetsService.getRecords('Incidentes');
+      await incidentService.addIncident(incidentData);
+      const updatedIncidents = await incidentService.getIncidents();
       setIncidents(updatedIncidents);
+      alert('Incidente registrado con éxito');
     } catch (error) {
       console.error('Error al guardar:', error);
       alert(`Error al guardar el incidente: ${error.message}`);
+    }
+  };
+
+  const handleSaveZone = async (zoneData) => {
+    try {
+      await zoneService.addZone(zoneData);
+      const updatedZones = await zoneService.getZones();
+      setZones(updatedZones);
+      alert('Zona registrada con éxito');
+    } catch (error) {
+      console.error('Error al guardar zona:', error);
+      alert(`Error al guardar la zona: ${error.message}`);
+    }
+  };
+
+  const handleSaveGuard = async (guardData) => {
+    try {
+      await guardService.addGuard(guardData);
+      const updatedGuards = await guardService.getGuards();
+      setGuards(updatedGuards);
+      alert('Guardia registrado con éxito');
+    } catch (error) {
+      console.error('Error al guardar guardia:', error);
+      alert(`Error al guardar el guardia: ${error.message}`);
     }
   };
 
@@ -64,9 +113,17 @@ function App() {
           </div>
         );
       case 'guards':
-        return <GuardsManager guards={[]} setGuards={() => {}} saveData={() => {}} />;
+        return <GuardsManager 
+          guards={guards} 
+          setGuards={setGuards} 
+          saveData={handleSaveGuard} 
+        />;
       case 'zones':
-        return <ZoneCreator zones={[]} setZones={() => {}} saveData={() => {}} />;
+        return <ZoneCreator 
+          zones={zones} 
+          setZones={setZones} 
+          saveData={handleSaveZone} 
+        />;
       default:
         return <div>Seleccione un módulo</div>;
     }
