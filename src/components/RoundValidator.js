@@ -1,240 +1,189 @@
 import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 
-const RoundValidator = ({ points, rounds, setRounds, saveData }) => {
-  const [currentUserLocation, setCurrentUserLocation] = useState(null);
-  const [currentPointIndex, setCurrentPointIndex] = useState(0);
-  const [currentRound, setCurrentRound] = useState(null);
-  const [roundNotes, setRoundNotes] = useState('');
-  const [guardName, setGuardName] = useState('');
-  
-  const filteredPoints = points;
-  const currentPoint = filteredPoints[currentPointIndex];
+const RoundValidator = ({ guards, zones, points }) => {
+  const [selectedGuard, setSelectedGuard] = useState('');
+  const [selectedZone, setSelectedZone] = useState('');
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [validatedPoints, setValidatedPoints] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
 
-  const getDistance = (lat1, lon1, lat2, lon2) => {
-    // Simulación de cálculo de distancia (en metros)
-    // En una aplicación real, usaríamos la fórmula de Haversine
-    return Math.abs(lat1 - lat2) * 111000; // 1 grado ≈ 111km
+  const calculateDistance = (point1, point2) => {
+    const R = 6371e3; // Radio de la tierra en metros
+    const φ1 = point1.lat * Math.PI/180;
+    const φ2 = point2.lat * Math.PI/180;
+    const Δφ = (point2.lat-point1.lat) * Math.PI/180;
+    const Δλ = (point2.lng-point1.lng) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
   };
 
-  const isWithinRange = () => {
-    if (!currentUserLocation || !currentPoint) return false;
-    const distance = getDistance(
-      currentUserLocation.lat,
-      currentUserLocation.lng,
-      currentPoint.location.lat,
-      currentPoint.location.lng
-    );
-    return distance <= 20; // 20 metros
-  };
+  useEffect(() => {
+    if (selectedZone) {
+      // Filtrar puntos por zona seleccionada
+      const zonePoints = points.filter(point => point.zoneId === selectedZone);
+      // Seleccionar el primer punto no validado
+      const nextPoint = zonePoints.find(p => !validatedPoints.includes(p.id));
+      setSelectedPoint(nextPoint || null);
+    }
+  }, [selectedZone, points, validatedPoints]);
 
-  const startNewRound = () => {
-    const newRound = {
-      id: Date.now(),
-      startTime: new Date().toISOString(),
-      guardName: guardName,
-      validatedPoints: [],
-      notes: roundNotes,
-      status: 'in_progress'
-    };
+  const validatePoint = async () => {
+    if (!userLocation || !selectedPoint) {
+      alert('Por favor, active su GPS para validar el punto');
+      return;
+    }
+
+    const distance = calculateDistance(userLocation, selectedPoint.location);
+    console.log('Distancia al punto:', distance, 'metros');
     
-    setCurrentRound(newRound);
-    setCurrentPointIndex(0);
-    setGuardName('');
-    setRoundNotes('');
-  };
+    if (distance <= 10) { // 10 metros de distancia máxima
+      const validation = {
+        pointId: selectedPoint.id,
+        guardId: selectedGuard,
+        zoneId: selectedZone,
+        timestamp: new Date().toISOString(),
+        location: userLocation
+      };
 
-  const validateCurrentPoint = () => {
-    if (!currentRound || !isWithinRange()) return;
-
-    const updatedRound = {
-      ...currentRound,
-      validatedPoints: [
-        ...currentRound.validatedPoints,
-        {
-          pointId: currentPoint.id,
-          validatedAt: new Date().toISOString()
-        }
-      ]
-    };
-
-    setCurrentRound(updatedRound);
-    
-    if (currentPointIndex < filteredPoints.length - 1) {
-      setCurrentPointIndex(currentPointIndex + 1);
+      try {
+        setValidatedPoints([...validatedPoints, selectedPoint.id]);
+        alert('¡Punto validado correctamente!');
+        
+        // Buscar siguiente punto no validado
+        const zonePoints = points.filter(point => point.zoneId === selectedZone);
+        const nextPoint = zonePoints.find(p => !validatedPoints.includes(p.id));
+        setSelectedPoint(nextPoint || null);
+      } catch (error) {
+        alert('Error al validar el punto');
+      }
     } else {
-      finishRound(updatedRound);
+      alert(`Debe acercarse más al punto. Está a ${Math.round(distance)} metros. Distancia máxima permitida: 10 metros`);
     }
   };
 
-  const finishRound = (round) => {
-    const completedRound = {
-      ...round,
-      endTime: new Date().toISOString(),
-      status: 'completed'
-    };
-    
-    const updatedRounds = [...rounds, completedRound];
-    setRounds(updatedRounds);
-    saveData('rounds', updatedRounds);
-    setCurrentRound(null);
-    setCurrentPointIndex(0);
-  };
-
-  const updateLocation = () => {
+  useEffect(() => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      const watchId = navigator.geolocation.watchPosition(
         (position) => {
-          setCurrentUserLocation({
+          setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
         },
         (error) => {
-          console.error("Error getting location:", error);
+          console.error('Error obteniendo ubicación:', error);
         },
         { enableHighAccuracy: true }
       );
-    } else {
-      alert("Geolocation is not supported by this browser.");
-    }
-  };
 
-  useEffect(() => {
-    if (currentRound) {
-      const interval = setInterval(updateLocation, 5000);
-      return () => clearInterval(interval);
+      return () => navigator.geolocation.clearWatch(watchId);
     }
-  }, [currentRound]);
-
-  if (!currentRound) {
-    return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Iniciar Nueva Ronda</h2>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2">Nombre del Guardia</label>
-          <input
-            type="text"
-            value={guardName}
-            onChange={(e) => setGuardName(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-            required
-          />
-        </div>
-        
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-2">Notas</label>
-          <textarea
-            value={roundNotes}
-            onChange={(e) => setRoundNotes(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-            rows="3"
-          />
-        </div>
-        
-        <button
-          onClick={startNewRound}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-          disabled={!guardName}
-        >
-          Iniciar Ronda
-        </button>
-        
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold mb-2">Rondas Anteriores</h3>
-          {rounds.length === 0 ? (
-            <p>No hay rondas registradas</p>
-          ) : (
-            <div className="space-y-2">
-              {rounds.map(round => (
-                <div key={round.id} className="border p-3 rounded">
-                  <p className="font-medium">{round.guardName}</p>
-                  <p className="text-sm text-gray-500">
-                    Validados: {round.validatedPoints.length} puntos
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    {new Date(round.startTime).toLocaleString()} -{' '}
-                    {round.endTime ? new Date(round.endTime).toLocaleString() : 'En progreso'}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  }, []);
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-1">Ronda en Progreso</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Guardia: {currentRound.guardName}
-      </p>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Validación de Ronda</h1>
       
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-        <h3 className="text-lg font-medium text-blue-800 mb-2">
-          Punto Actual: {currentPointIndex + 1} de {filteredPoints.length}
-        </h3>
-        <p className="font-medium">{currentPoint.name}</p>
-        <p className="text-sm text-gray-600">{currentPoint.description}</p>
-        
-        <div className="mt-4">
-          <div className="flex justify-between items-center">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="space-y-4">
             <div>
-              <button
-                onClick={updateLocation}
-                className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+              <label className="block text-gray-700 mb-2">Guardia</label>
+              <select
+                value={selectedGuard}
+                onChange={(e) => setSelectedGuard(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
               >
-                Actualizar Ubicación
-              </button>
+                <option value="">Seleccione un guardia</option>
+                {guards.map(guard => (
+                  <option key={guard.id} value={guard.id}>{guard.name}</option>
+                ))}
+              </select>
             </div>
-            <div className="text-sm">
-              {currentUserLocation ? (
-                <span>
-                  Distancia: {getDistance(
-                    currentUserLocation.lat,
-                    currentUserLocation.lng,
-                    currentPoint.location.lat,
-                    currentPoint.location.lng
-                  ).toFixed(1)} m
-                </span>
-              ) : (
-                <span>Ubicación no disponible</span>
-              )}
+
+            <div>
+              <label className="block text-gray-700 mb-2">Zona</label>
+              <select
+                value={selectedZone}
+                onChange={(e) => setSelectedZone(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded"
+                required
+              >
+                <option value="">Seleccione una zona</option>
+                {zones.map(zone => (
+                  <option key={zone.id} value={zone.id}>{zone.name}</option>
+                ))}
+              </select>
             </div>
-          </div>
-          
-          <div className="mt-3">
-            {isWithinRange() ? (
-              <div className="bg-green-100 text-green-800 p-2 rounded flex items-center">
-                <span className="mr-2">✔️</span>
-                <span>Estás dentro del rango (≤20m) para validar este punto</span>
+
+            {selectedPoint && (
+              <div className="bg-blue-50 p-4 rounded">
+                <h3 className="font-semibold">Punto Actual:</h3>
+                <p className="font-medium">{selectedPoint.name}</p>
+                <p className="text-sm text-gray-600">{selectedPoint.description}</p>
+                <button
+                  onClick={validatePoint}
+                  className="mt-4 w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
+                >
+                  Validar Punto
+                </button>
               </div>
-            ) : (
-              <div className="bg-yellow-100 text-yellow-800 p-2 rounded flex items-center">
-                <span className="mr-2">⚠️</span>
-                <span>Acércate más al punto para validar (≤20m requeridos)</span>
+            )}
+
+            {!selectedPoint && selectedZone && (
+              <div className="bg-yellow-50 p-4 rounded">
+                <p className="text-center text-gray-600">
+                  No hay más puntos pendientes de validación en esta zona
+                </p>
+              </div>
+            )}
+
+            {validatedPoints.length > 0 && (
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Puntos Validados:</h3>
+                <div className="space-y-2">
+                  {validatedPoints.map(pointId => {
+                    const point = points.find(p => p.id === pointId);
+                    return point ? (
+                      <div key={pointId} className="bg-green-50 p-2 rounded">
+                        <p className="text-sm">{point.name}</p>
+                      </div>
+                    ) : null;
+                  })}
+                </div>
               </div>
             )}
           </div>
         </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div style={{ height: '400px' }}>
+            <MapContainer
+              center={[-17.755607, -63.162082]}
+              zoom={13}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              />
+              {userLocation && (
+                <Marker position={[userLocation.lat, userLocation.lng]} />
+              )}
+              {selectedPoint && selectedPoint.location && (
+                <Marker position={[selectedPoint.location.lat, selectedPoint.location.lng]} />
+              )}
+            </MapContainer>
+          </div>
+        </div>
       </div>
-      
-      <button
-        onClick={validateCurrentPoint}
-        className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 mb-2"
-        disabled={!isWithinRange()}
-      >
-        Validar Punto Actual
-      </button>
-      
-      <button
-        onClick={() => finishRound(currentRound)}
-        className="w-full bg-red-500 text-white py-2 rounded hover:bg-red-600"
-      >
-        Finalizar Ronda
-      </button>
     </div>
   );
 };

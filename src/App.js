@@ -10,6 +10,7 @@ import { zoneService } from './services/zoneService';
 import { guardService } from './services/guardService';
 import { pointService } from './services/pointService';
 import './config/firebase';
+import RoundValidator from './components/RoundValidator';
 
 
 function App() {
@@ -148,6 +149,12 @@ function App() {
           setPoints={setPoints}
           saveData={handleSavePoint}
         />;
+      case 'rondero':
+        return <RoundValidator 
+          guards={guards}
+          zones={zones}
+          points={points}
+        />;
       default:
         return <div>Seleccione un módulo</div>;
     }
@@ -184,6 +191,12 @@ function App() {
             className={`px-4 py-2 rounded font-medium ${currentModule === 'points' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
           >
             Puntos
+          </button>
+          <button
+            onClick={() => setCurrentModule('rondero')}
+            className={`px-4 py-2 rounded font-medium ${currentModule === 'rondero' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+          >
+            Rondero
           </button>
         </div>
       </nav>

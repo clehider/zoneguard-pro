@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 
-const ZoneCreator = ({ zones = [], setZones, saveData }) => {
+const ZoneCreator = ({ zones = [], guards = [], setZones, saveData }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    location: null
+    location: null,
+    assignedGuards: []  // Nuevo campo para guardias asignados
   });
 
   const handleInputChange = (e) => {
