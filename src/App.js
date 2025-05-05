@@ -26,15 +26,17 @@ function App() {
       try {
         console.log('Iniciando aplicación...');
         if (isMounted) {
-          const [updatedIncidents, updatedZones, updatedGuards] = await Promise.all([
+          const [updatedIncidents, updatedZones, updatedGuards, updatedPoints] = await Promise.all([
             incidentService.getIncidents(),
             zoneService.getZones(),
-            guardService.getGuards()
+            guardService.getGuards(),
+            pointService.getPoints()
           ]);
           
           setIncidents(updatedIncidents);
           setZones(updatedZones);
           setGuards(updatedGuards);
+          setPoints(updatedPoints);
         }
       } catch (error) {
         if (isMounted) {

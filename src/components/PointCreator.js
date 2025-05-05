@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { pointService } from '../services/pointService';
 
 const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
   const [formData, setFormData] = useState({
@@ -8,6 +9,21 @@ const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
     zoneId: '',
     location: null
   });
+
+  // Añadimos useEffect para cargar los puntos al iniciar
+  useEffect(() => {
+    const loadPoints = async () => {
+      try {
+        const loadedPoints = await pointService.getPoints();
+        setPoints(loadedPoints);
+      } catch (error) {
+        console.error('Error al cargar puntos:', error);
+      }
+    };
+    loadPoints();
+  }, [setPoints]);
+
+  const [editMode, setEditMode] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -47,6 +63,31 @@ const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
     }
   };
 
+  const handleEdit = (point) => {
+    setFormData({
+      id: point.id,
+      name: point.name,
+      description: point.description,
+      zoneId: point.zoneId,
+      location: point.location
+    });
+    setEditMode(true);
+  };
+
+  const handleDelete = async (pointId) => {
+    if (window.confirm('¿Está seguro de eliminar este punto?')) {
+      try {
+        await pointService.deletePoint(pointId);
+        const updatedPoints = await pointService.getPoints();
+        setPoints(updatedPoints);
+        alert('Punto eliminado con éxito');
+      } catch (error) {
+        console.error('Error al eliminar punto:', error);
+        alert('Error al eliminar el punto');
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.location) {
@@ -58,13 +99,22 @@ const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
       return;
     }
     try {
-      await saveData(formData);
+      if (editMode) {
+        await pointService.updatePoint(formData.id, formData);
+      } else {
+        await pointService.addPoint(formData);
+      }
+      const updatedPoints = await pointService.getPoints();
+      setPoints(updatedPoints);
       setFormData({
+        id: null,
         name: '',
         description: '',
         zoneId: '',
         location: null
       });
+      setEditMode(false);
+      alert(editMode ? 'Punto actualizado con éxito' : 'Punto registrado con éxito');
     } catch (error) {
       console.error('Error al guardar punto:', error);
       alert('Error al guardar el punto');
@@ -85,8 +135,10 @@ const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
 
   return (
     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Crear Nuevo Punto</h2>
+      <div className="bg-white p-6 rounded-lg shadow overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+        <h2 className="text-xl font-semibold mb-4">
+          {editMode ? 'Editar Punto' : 'Crear Nuevo Punto'}
+        </h2>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -175,10 +227,10 @@ const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
             {formData.location && (
               <Marker position={[formData.location.lat, formData.location.lng]} />
             )}
-            {points.map((point, index) => (
+            {points && points.map((point) => (
               point.location && (
                 <Marker
-                  key={point.id || index}
+                  key={point.id}
                   position={[point.location.lat, point.location.lng]}
                   title={point.name}
                 />
@@ -187,16 +239,30 @@ const PointCreator = ({ points = [], zones = [], setPoints, saveData }) => {
           </MapContainer>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 overflow-y-auto" style={{ maxHeight: '300px' }}>
           <h3 className="font-semibold mb-2">Puntos Registrados</h3>
           <div className="space-y-2">
-            {points.map(point => (
-              <div key={point.id} className="border p-3 rounded">
+            {points && points.map(point => (
+              <div key={point.id} className="border p-3 rounded hover:bg-gray-50">
                 <p className="font-medium">{point.name}</p>
                 <p className="text-sm text-gray-600">{point.description}</p>
                 <p className="text-xs text-gray-500">
                   Zona: {zones.find(z => z.id === point.zoneId)?.name || 'N/A'}
                 </p>
+                <div className="mt-2 flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(point)}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(point.id)}
+                    className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </div>
             ))}
           </div>
