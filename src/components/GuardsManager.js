@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import RoundValidator from './RoundValidator';
+import { guardService } from '../services/guardService';
 
 const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
   const [formData, setFormData] = useState({
@@ -171,7 +172,7 @@ const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
 
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Guardias Registrados</h2>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
             {guards.map(guard => (
               <div
                 key={guard.id}
