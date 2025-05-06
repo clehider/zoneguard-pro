@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import RoundValidator from './RoundValidator';
 
-const GuardsManager = ({ guards = [], setGuards, saveData }) => {
-  const [currentGuard, setCurrentGuard] = useState(null);
-  const [rounds, setRounds] = useState([]);
+const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
   const [formData, setFormData] = useState({
     name: '',
     identification: '',
     phone: '',
     email: '',
-    status: 'Activo'
+    status: 'Activo',
+    assignedZone: ''  // Agregado para manejar la zona asignada
   });
 
   const handleInputChange = (e) => {
@@ -97,15 +96,20 @@ const GuardsManager = ({ guards = [], setGuards, saveData }) => {
               </div>
               
               <div>
-                <label className="block text-gray-700 mb-2">Estado</label>
+                <label className="block text-gray-700 mb-2">Zona Asignada</label>
                 <select
-                  name="status"
-                  value={formData.status}
+                  name="assignedZone"
+                  value={formData.assignedZone}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded"
+                  required
                 >
-                  <option value="Activo">Activo</option>
-                  <option value="Inactivo">Inactivo</option>
+                  <option value="">Seleccione una zona</option>
+                  {zones.map(zone => (
+                    <option key={zone.id} value={zone.id}>
+                      {zone.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               
@@ -125,12 +129,16 @@ const GuardsManager = ({ guards = [], setGuards, saveData }) => {
             {guards.map(guard => (
               <div
                 key={guard.id}
-                className="border p-3 rounded hover:bg-gray-50 cursor-pointer"
-                onClick={() => handleGuardSelect(guard)}
+                className="border p-3 rounded hover:bg-gray-50"
               >
                 <p className="font-medium">{guard.name}</p>
                 <p className="text-sm text-gray-600">{guard.identification}</p>
                 <p className="text-sm text-gray-500">{guard.phone}</p>
+                <p className="text-sm text-gray-500">
+                  <strong>Zona Asignada:</strong> {
+                    zones.find(z => z.id === guard.assignedZone)?.name || 'No asignada'
+                  }
+                </p>
                 <div className={`text-xs mt-1 inline-block px-2 py-1 rounded ${
                   guard.status === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}>
