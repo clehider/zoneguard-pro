@@ -3,13 +3,16 @@ import RoundValidator from './RoundValidator';
 
 const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
   const [formData, setFormData] = useState({
+    id: null,
     name: '',
     identification: '',
     phone: '',
     email: '',
     status: 'Activo',
-    assignedZone: ''  // Agregado para manejar la zona asignada
+    assignedZone: ''
   });
+
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -23,28 +26,60 @@ const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
     e.preventDefault();
     try {
       await saveData(formData);
-      setFormData({
-        name: '',
-        identification: '',
-        phone: '',
-        email: '',
-        status: 'Activo'
-      });
+      resetForm();
     } catch (error) {
       console.error('Error al guardar guardia:', error);
       alert('Error al guardar el guardia');
     }
   };
 
-  const handleGuardSelect = (guard) => {
-    setCurrentGuard(guard);
+  const resetForm = () => {
+    setFormData({
+      id: null,
+      name: '',
+      identification: '',
+      phone: '',
+      email: '',
+      status: 'Activo',
+      assignedZone: ''
+    });
+    setIsEditing(false);
+  };
+
+  const handleEdit = (guard) => {
+    setFormData({
+      id: guard.id,
+      name: guard.name,
+      identification: guard.identification,
+      phone: guard.phone,
+      email: guard.email,
+      status: guard.status,
+      assignedZone: guard.assignedZone || ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleDelete = async (guardId) => {
+    if (window.confirm('¿Está seguro de eliminar este guardia?')) {
+      try {
+        await guardService.deleteGuard(guardId);
+        const updatedGuards = guards.filter(g => g.id !== guardId);
+        setGuards(updatedGuards);
+        alert('Guardia eliminado con éxito');
+      } catch (error) {
+        console.error('Error al eliminar guardia:', error);
+        alert('Error al eliminar el guardia');
+      }
+    }
   };
 
   return (
     <div className="p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Registrar Nuevo Guardia</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            {isEditing ? 'Editar Guardia' : 'Registrar Nuevo Guardia'}
+          </h2>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
@@ -113,12 +148,23 @@ const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
                 </select>
               </div>
               
-              <button
-                type="submit"
-                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-              >
-                Guardar Guardia
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
+                >
+                  {isEditing ? 'Actualizar Guardia' : 'Guardar Guardia'}
+                </button>
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
             </div>
           </form>
         </div>
@@ -143,6 +189,20 @@ const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
                   guard.status === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}>
                   {guard.status}
+                </div>
+                <div className="mt-2 flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(guard)}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(guard.id)}
+                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Eliminar
+                  </button>
                 </div>
               </div>
             ))}
