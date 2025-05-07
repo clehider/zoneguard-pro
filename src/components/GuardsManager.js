@@ -2,19 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { guardService } from '../services/guardService';
 import { auth } from '../config/firebase';
 
-const GuardsManager = () => {
+const GuardsManager = ({ zones = [] }) => {
   const [guards, setGuards] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
-    status: 'active'
+    status: 'active',
+    assignedZone: '' // Nuevo campo para la zona asignada
   });
+
+  const [searchZone, setSearchZone] = useState(''); // Estado para la búsqueda de zonas
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState('');
+
+  // Filtrar zonas basado en la búsqueda
+  // Modificar la función de filtrado de zonas para manejar valores undefined
+  const filteredZones = zones.filter(zone =>
+    zone && zone.name ? zone.name.toLowerCase().includes(searchZone.toLowerCase()) : false
+  );
 
   useEffect(() => {
     loadGuards();
@@ -77,17 +86,34 @@ const GuardsManager = () => {
     }
   };
 
+  // Modificar el resetForm para incluir assignedZone
   const resetForm = () => {
     setFormData({
       name: '',
       email: '',
       phone: '',
       password: '',
-      status: 'active'
+      status: 'active',
+      assignedZone: '' // Incluir el campo assignedZone
     });
     setEditingId(null);
     setError(null);
     setSuccess('');
+  };
+
+  // Modificar handleEdit para incluir assignedZone
+  const handleEdit = (guard) => {
+    setError(null);
+    setSuccess('');
+    setFormData({
+      name: guard.name || '',
+      email: guard.email || '',
+      phone: guard.phone || '',
+      password: '',
+      status: guard.status || 'active',
+      assignedZone: guard.assignedZone || '' // Incluir el campo assignedZone
+    });
+    setEditingId(guard.id);
   };
 
   const handleSubmit = async (e) => {
@@ -102,12 +128,17 @@ const GuardsManager = () => {
           
           const guardDataToUpdate = {
               name: formData.name,
-              email: formData.email.toLowerCase(),
+              email: formData.email ? formData.email.toLowerCase() : '', // Validación agregada
               phone: formData.phone,
-              status: formData.status
+              status: formData.status,
+              assignedZone: formData.assignedZone || null // Aseguramos que siempre tenga un valor
           };
   
-          // Agregar la contraseña solo si se proporciona una nueva
+          // Validación adicional para el email
+          if (!guardDataToUpdate.email) {
+              throw new Error('El email es requerido');
+          }
+  
           if (formData.password && formData.password.trim()) {
               guardDataToUpdate.password = formData.password;
           }
@@ -115,7 +146,7 @@ const GuardsManager = () => {
           if (editingId) {
               // Verificar si el email ya existe para otro guardia
               const existingGuard = guards.find(g => 
-                  g.email.toLowerCase() === guardDataToUpdate.email.toLowerCase() && 
+                  g.email && g.email.toLowerCase() === guardDataToUpdate.email.toLowerCase() && 
                   g.id !== editingId
               );
               
@@ -144,24 +175,11 @@ const GuardsManager = () => {
       }
   };
 
-  const handleEdit = (guard) => {
-    setError(null);
-    setSuccess('');
-    setFormData({
-      name: guard.name,
-      email: guard.email,
-      phone: guard.phone,
-      password: '',
-      status: guard.status || 'active' // Asegurar que siempre haya un estado
-    });
-    setEditingId(guard.id);
-  };
-
   const handleDelete = async (guardId) => {
     if (!guardId || !window.confirm('¿Está seguro de eliminar este guardia?')) {
       return;
     }
-
+  
     try {
       setLoading(true);
       setError(null);
@@ -265,6 +283,32 @@ const GuardsManager = () => {
               <option value="inactive">Inactivo</option>
             </select>
           </div>
+          {/* Nuevo campo para selección de zona */}
+          <div className="col-span-2">
+            <label className="block mb-2">Zona Asignada:</label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar zona..."
+                value={searchZone}
+                onChange={(e) => setSearchZone(e.target.value)}
+                className="w-full p-2 border rounded mb-2"
+              />
+              <select
+                name="assignedZone"
+                value={formData.assignedZone}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="">Seleccionar Zona</option>
+                {filteredZones.map(zone => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
         <div className="mt-4 space-x-2">
           <button
@@ -286,13 +330,14 @@ const GuardsManager = () => {
         </div>
       </form>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="min-w-full table-auto">
           <thead>
             <tr className="bg-gray-100">
               <th className="px-4 py-2">Nombre</th>
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Teléfono</th>
+              <th className="px-4 py-2">Zona Asignada</th>
               <th className="px-4 py-2">Estado</th>
               <th className="px-4 py-2">Acciones</th>
             </tr>
@@ -303,6 +348,9 @@ const GuardsManager = () => {
                 <td className="px-4 py-2">{guard.name}</td>
                 <td className="px-4 py-2">{guard.email}</td>
                 <td className="px-4 py-2">{guard.phone}</td>
+                <td className="px-4 py-2">
+                  {zones.find(z => z.id === guard.assignedZone)?.name || 'Sin asignar'}
+                </td>
                 <td className="px-4 py-2">
                   <span className={`px-2 py-1 rounded ${
                     guard.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -329,6 +377,13 @@ const GuardsManager = () => {
           </tbody>
         </table>
       </div>
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded-lg">
+            <p className="text-gray-800">Cargando...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
