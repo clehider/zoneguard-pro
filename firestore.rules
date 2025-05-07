@@ -1,8 +1,77 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;  // Solo para desarrollo
+    // Función para verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Función para verificar si el usuario es admin
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Función para verificar si el usuario es supervisor
+    function isSupervisor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'supervisor';
+    }
+
+    // Función para verificar si el usuario es guardia
+    function isGuard() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'guard';
+    }
+
+    // Función para verificar si el usuario tiene permiso específico
+    function hasPermission(permission) {
+      return isAuthenticated() && 
+        (isAdmin() || 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.permissions.hasAny([permission]));
+    }
+
+    // Reglas para la colección de usuarios
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (request.auth.uid == userId && 
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'permissions'])));
+      allow delete: if isAdmin();
+    }
+
+    // Reglas para la colección de guardias
+    match /guards/{guardId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isGuard() && request.auth.uid == resource.data.userId);
+    }
+
+    // Reglas para la colección de zonas
+    match /zones/{zoneId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isSupervisor();
+    }
+
+    // Reglas para la colección de puntos
+    match /points/{pointId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isSupervisor();
+    }
+
+    // Reglas para la colección de incidentes
+    match /incidents/{incidentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || isSupervisor() || 
+        (isGuard() && resource.data.guardId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    // Reglas para la colección de rondas
+    match /rounds/{roundId} {
+      allow read: if isAuthenticated();
+      allow create: if isGuard();
+      allow update: if isAdmin() || isSupervisor() || 
+        (isGuard() && resource.data.guardId == request.auth.uid);
+      allow delete: if isAdmin();
     }
   }
 }

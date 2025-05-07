@@ -1,219 +1,341 @@
-import React, { useState } from 'react';
-import RoundValidator from './RoundValidator';
+import React, { useState, useEffect } from 'react';
 import { guardService } from '../services/guardService';
+import { auth } from '../config/firebase';
 
-const GuardsManager = ({ guards = [], zones = [], setGuards, saveData }) => {
+const GuardsManager = () => {
+  const [guards, setGuards] = useState([]);
   const [formData, setFormData] = useState({
-    id: null,
     name: '',
-    identification: '',
-    phone: '',
     email: '',
-    status: 'Activo',
-    assignedZone: ''
+    phone: '',
+    password: '',
+    status: 'active'
   });
+  const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState('');
 
-  const [isEditing, setIsEditing] = useState(false);
+  useEffect(() => {
+    loadGuards();
+  }, []);
+
+  const loadGuards = async () => {
+    try {
+      setLoading(true);
+      const guardsData = await guardService.getGuards();
+      setGuards(guardsData);
+    } catch (err) {
+      setError('Error al cargar los guardias: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      setError('El nombre es obligatorio');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      setError('El email es obligatorio');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError('El email no es válido');
+      return false;
+    }
+    if (!formData.phone.trim()) {
+      setError('El teléfono es obligatorio');
+      return false;
+    }
+    if (!editingId && !formData.password.trim()) {
+      setError('La contraseña es obligatoria para nuevos guardias');
+      return false;
+    }
+    return true;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await saveData(formData);
-      resetForm();
-    } catch (error) {
-      console.error('Error al guardar guardia:', error);
-      alert('Error al guardar el guardia');
+    setError(null);
+    setSuccess('');
+    
+    if (name === 'phone') {
+      const formatted = value.replace(/\D/g, '')
+        .replace(/^(\d{3})/, '($1) ')
+        .replace(/(\d{3})(\d{4})/, '$1-$2');
+      setFormData(prev => ({
+        ...prev,
+        [name]: formatted
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
     }
   };
 
   const resetForm = () => {
     setFormData({
-      id: null,
       name: '',
-      identification: '',
-      phone: '',
       email: '',
-      status: 'Activo',
-      assignedZone: ''
+      phone: '',
+      password: '',
+      status: 'active'
     });
-    setIsEditing(false);
+    setEditingId(null);
+    setError(null);
+    setSuccess('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess('');
+
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+      
+      const guardDataToUpdate = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        status: formData.status
+      };
+  
+      // Solo incluir la contraseña si se proporciona una nueva
+      if (formData.password.trim()) {
+        guardDataToUpdate.password = formData.password;
+      }
+  
+      if (editingId) {
+        // Verificar si el guardia existe antes de actualizar
+        const existingGuard = guards.find(guard => guard.id === editingId);
+        if (!existingGuard) {
+          throw new Error('No se encontró el guardia a actualizar');
+        }
+  
+        await guardService.updateGuard(editingId, guardDataToUpdate);
+        
+        // Actualizar el estado local después de una actualización exitosa
+        setGuards(prevGuards => 
+          prevGuards.map(guard => 
+            guard.id === editingId 
+              ? { ...guard, ...guardDataToUpdate, id: editingId }
+              : guard
+          )
+        );
+        
+        setSuccess('Guardia actualizado exitosamente');
+      } else {
+        const newGuard = await guardService.addGuard(guardDataToUpdate);
+        // Agregar el nuevo guardia al estado local
+        setGuards(prevGuards => [...prevGuards, newGuard]);
+        setSuccess('Guardia agregado exitosamente');
+      }
+  
+      resetForm();
+      // Recargar la lista completa para asegurar sincronización
+      await loadGuards();
+    } catch (err) {
+      setError('Error: ' + err.message);
+      console.error('Error detallado:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (guard) => {
+    setError(null);
+    setSuccess('');
     setFormData({
-      id: guard.id,
       name: guard.name,
-      identification: guard.identification,
-      phone: guard.phone,
       email: guard.email,
-      status: guard.status,
-      assignedZone: guard.assignedZone || ''
+      phone: guard.phone,
+      password: '',
+      status: guard.status || 'active' // Asegurar que siempre haya un estado
     });
-    setIsEditing(true);
+    setEditingId(guard.id);
   };
 
   const handleDelete = async (guardId) => {
-    if (window.confirm('¿Está seguro de eliminar este guardia?')) {
-      try {
-        await guardService.deleteGuard(guardId);
-        const updatedGuards = guards.filter(g => g.id !== guardId);
-        setGuards(updatedGuards);
-        alert('Guardia eliminado con éxito');
-      } catch (error) {
-        console.error('Error al eliminar guardia:', error);
-        alert('Error al eliminar el guardia');
+    if (!guardId || !window.confirm('¿Está seguro de eliminar este guardia?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Verificar si el guardia existe antes de eliminar
+      const guardToDelete = guards.find(guard => guard.id === guardId);
+      if (!guardToDelete) {
+        throw new Error('No se encontró el guardia a eliminar');
       }
+      
+      // Eliminar de la base de datos
+      await guardService.deleteGuard(guardId);
+      
+      // Actualizar el estado local solo si la eliminación fue exitosa
+      setGuards(prevGuards => prevGuards.filter(guard => guard.id !== guardId));
+      setSuccess('Guardia eliminado exitosamente');
+      
+    } catch (err) {
+      setError('Error al eliminar: ' + err.message);
+      console.error('Error detallado:', err);
+      // Recargar la lista en caso de error para asegurar consistencia
+      await loadGuards();
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">
-            {isEditing ? 'Editar Guardia' : 'Registrar Nuevo Guardia'}
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 mb-2">Nombre Completo</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 mb-2">Identificación</label>
-                <input
-                  type="text"
-                  name="identification"
-                  value={formData.identification}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 mb-2">Teléfono</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-gray-700 mb-2">Zona Asignada</label>
-                <select
-                  name="assignedZone"
-                  value={formData.assignedZone}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required
-                >
-                  <option value="">Seleccione una zona</option>
-                  {zones.map(zone => (
-                    <option key={zone.id} value={zone.id}>
-                      {zone.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex space-x-2">
-                <button
-                  type="submit"
-                  className="flex-1 bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-                >
-                  {isEditing ? 'Actualizar Guardia' : 'Guardar Guardia'}
-                </button>
-                {isEditing && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="flex-1 bg-gray-500 text-white py-2 rounded hover:bg-gray-600"
-                  >
-                    Cancelar
-                  </button>
-                )}
-              </div>
-            </div>
-          </form>
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Gestión de Guardias</h2>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
         </div>
+      )}
+      
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {success}
+        </div>
+      )}
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Guardias Registrados</h2>
-          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+      <form onSubmit={handleSubmit} className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block mb-2">Nombre:</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div>
+            <label className="block mb-2">Email:</label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div>
+            <label className="block mb-2">Teléfono:</label>
+            <input
+              type="text"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div>
+            <label className="block mb-2">
+              Contraseña{editingId ? ' (dejar en blanco para mantener)' : ''}:
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+              required={!editingId}
+            />
+          </div>
+          <div>
+            <label className="block mb-2">Estado:</label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleInputChange}
+              className="w-full p-2 border rounded"
+            >
+              <option value="active">Activo</option>
+              <option value="inactive">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 space-x-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
+          >
+            {loading ? 'Guardando...' : editingId ? 'Actualizar' : 'Agregar'}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </form>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full table-auto">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="px-4 py-2">Nombre</th>
+              <th className="px-4 py-2">Email</th>
+              <th className="px-4 py-2">Teléfono</th>
+              <th className="px-4 py-2">Estado</th>
+              <th className="px-4 py-2">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
             {guards.map(guard => (
-              <div
-                key={guard.id}
-                className="border p-3 rounded hover:bg-gray-50"
-              >
-                <p className="font-medium">{guard.name}</p>
-                <p className="text-sm text-gray-600">{guard.identification}</p>
-                <p className="text-sm text-gray-500">{guard.phone}</p>
-                <p className="text-sm text-gray-500">
-                  <strong>Zona Asignada:</strong> {
-                    zones.find(z => z.id === guard.assignedZone)?.name || 'No asignada'
-                  }
-                </p>
-                <div className={`text-xs mt-1 inline-block px-2 py-1 rounded ${
-                  guard.status === 'Activo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {guard.status}
-                </div>
-                <div className="mt-2 flex space-x-2">
+              <tr key={guard.id} className="border-b">
+                <td className="px-4 py-2">{guard.name}</td>
+                <td className="px-4 py-2">{guard.email}</td>
+                <td className="px-4 py-2">{guard.phone}</td>
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-1 rounded ${
+                    guard.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {guard.status === 'active' ? 'Activo' : 'Inactivo'}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
                   <button
                     onClick={() => handleEdit(guard)}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                    className="mr-2 bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => handleDelete(guard.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                   >
                     Eliminar
                   </button>
-                </div>
-              </div>
+                </td>
+              </tr>
             ))}
-          </div>
-        </div>
+          </tbody>
+        </table>
       </div>
     </div>
   );
 };
 
 export default GuardsManager;
-
-// DONE

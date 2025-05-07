@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MapComponent from './components/MapComponent';
 import IncidentForm from './components/IncidentForm';
 import GuardsManager from './components/GuardsManager';
@@ -11,15 +12,25 @@ import { guardService } from './services/guardService';
 import { pointService } from './services/pointService';
 import './config/firebase';
 import RoundValidator from './components/RoundValidator';
-
+import PointAssignment from './components/PointAssignment';
+import Login from './components/Login';
+import UserManager from './components/UserManager';
+import { useAuth } from './contexts/AuthContext';
 
 function App() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
   const [incidents, setIncidents] = useState([]);
   const [zones, setZones] = useState([]);
   const [guards, setGuards] = useState([]);
   const [points, setPoints] = useState([]);
   const [currentModule, setCurrentModule] = useState('incidents');
-  
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Cargando...</div>;
+  }
+
+  // Mover la verificación de usuario después de la declaración de hooks
   useEffect(() => {
     let isMounted = true;
   
@@ -133,6 +144,7 @@ function App() {
       case 'guards':
         return <GuardsManager 
           guards={guards} 
+          zones={zones}  // Agregando las zonas como prop
           setGuards={setGuards} 
           saveData={handleSaveGuard} 
         />;
@@ -155,64 +167,95 @@ function App() {
           zones={zones}
           points={points}
         />;
+      case 'point-assignment':
+        return <PointAssignment guards={guards} points={points} />;
+      case 'admin':
+        return <UserManager />;
       default:
         return <div>Seleccione un módulo</div>;
     }
   };
 
-  return (
-    <div className="App flex flex-col h-screen">
-      <header className="bg-gray-800 text-white p-4">
+  return !user && location.pathname !== '/login' ? (
+    <Navigate to="/login" replace />
+  ) : (
+    <div className="app-layout">
+      <header className="app-header bg-gray-800 text-white p-4">
         <h1 className="text-xl font-bold">ZoneGuard Pro - Panel de Control</h1>
       </header>
 
-      <nav className="bg-gray-100 p-4">
-        <div className="flex space-x-4">
+      <nav className="bg-gray-100 p-4 border-b">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setCurrentModule('incidents')}
-            className={`px-4 py-2 rounded font-medium ${currentModule === 'incidents' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              currentModule === 'incidents' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
           >
             Incidentes
           </button>
           <button
             onClick={() => setCurrentModule('guards')}
-            className={`px-4 py-2 rounded font-medium ${currentModule === 'guards' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              currentModule === 'guards' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
           >
             Guardias
           </button>
           <button
             onClick={() => setCurrentModule('zones')}
-            className={`px-4 py-2 rounded font-medium ${currentModule === 'zones' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              currentModule === 'zones' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
           >
             Zonas
           </button>
           <button
             onClick={() => setCurrentModule('points')}
-            className={`px-4 py-2 rounded font-medium ${currentModule === 'points' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              currentModule === 'points' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
           >
             Puntos
           </button>
           <button
             onClick={() => setCurrentModule('rondero')}
-            className={`px-4 py-2 rounded font-medium ${currentModule === 'rondero' ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+            className={`px-4 py-2 rounded-md font-medium ${
+              currentModule === 'rondero' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
           >
             Rondero
           </button>
+          {user?.permissions?.includes('admin') && (
+            <button
+              onClick={() => setCurrentModule('admin')}
+              className={`px-4 py-2 rounded-md font-medium ${
+                currentModule === 'admin' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              Administración
+            </button>
+          )}
         </div>
       </nav>
 
-      <main className="flex-1 overflow-hidden">
+      <main className="app-content">
         {renderCurrentModule()}
       </main>
-
-      <footer className="bg-gray-200 text-center p-2 text-sm">
-        © 2023 ZoneGuard Pro
-      </footer>
     </div>
   );
 }
 
 export default App;
-
-
-// DONE

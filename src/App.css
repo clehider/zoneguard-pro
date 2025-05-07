@@ -1,12 +1,57 @@
-/* Basic styles for App component */
+/* Estilos base de la aplicación */
 .App {
   text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .App-header {
-  min-height: 100vh;
+  flex-shrink: 0;
+}
+
+.App-content {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Estilos específicos para el formulario de guardias */
+.guards-form-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  height: 100%;
+}
+
+.guards-form-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.guards-form-footer {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+  z-index: 10;
+}
+
+/* Estilos para los scrollbars */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
 }
