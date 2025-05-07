@@ -91,62 +91,57 @@ const GuardsManager = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess('');
-
-    if (!validateForm()) return;
-
-    try {
-      setLoading(true);
-      
-      const guardDataToUpdate = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        status: formData.status
-      };
+      e.preventDefault();
+      setError(null);
+      setSuccess('');
   
-      // Solo incluir la contraseña si se proporciona una nueva
-      if (formData.password.trim()) {
-        guardDataToUpdate.password = formData.password;
+      if (!validateForm()) return;
+  
+      try {
+          setLoading(true);
+          
+          const guardDataToUpdate = {
+              name: formData.name,
+              email: formData.email.toLowerCase(),
+              phone: formData.phone,
+              status: formData.status
+          };
+  
+          // Agregar la contraseña solo si se proporciona una nueva
+          if (formData.password && formData.password.trim()) {
+              guardDataToUpdate.password = formData.password;
+          }
+  
+          if (editingId) {
+              // Verificar si el email ya existe para otro guardia
+              const existingGuard = guards.find(g => 
+                  g.email.toLowerCase() === guardDataToUpdate.email.toLowerCase() && 
+                  g.id !== editingId
+              );
+              
+              if (existingGuard) {
+                  throw new Error('Ya existe otro guardia con este email');
+              }
+  
+              await guardService.updateGuard(editingId, guardDataToUpdate);
+              setSuccess('Guardia actualizado exitosamente');
+          } else {
+              // Asegurarse de que la contraseña esté presente para nuevos guardias
+              if (!guardDataToUpdate.password) {
+                  throw new Error('La contraseña es requerida para nuevos guardias');
+              }
+              const newGuard = await guardService.addGuard(guardDataToUpdate);
+              setSuccess('Guardia agregado exitosamente');
+          }
+  
+          resetForm();
+          await loadGuards(); // Recargar la lista después de una operación exitosa
+      } catch (err) {
+          setError('Error: ' + err.message);
+          console.error('Error detallado:', err);
+      } finally {
+          setLoading(false);
       }
-  
-      if (editingId) {
-        // Verificar si el guardia existe antes de actualizar
-        const existingGuard = guards.find(guard => guard.id === editingId);
-        if (!existingGuard) {
-          throw new Error('No se encontró el guardia a actualizar');
-        }
-  
-        await guardService.updateGuard(editingId, guardDataToUpdate);
-        
-        // Actualizar el estado local después de una actualización exitosa
-        setGuards(prevGuards => 
-          prevGuards.map(guard => 
-            guard.id === editingId 
-              ? { ...guard, ...guardDataToUpdate, id: editingId }
-              : guard
-          )
-        );
-        
-        setSuccess('Guardia actualizado exitosamente');
-      } else {
-        const newGuard = await guardService.addGuard(guardDataToUpdate);
-        // Agregar el nuevo guardia al estado local
-        setGuards(prevGuards => [...prevGuards, newGuard]);
-        setSuccess('Guardia agregado exitosamente');
-      }
-  
-      resetForm();
-      // Recargar la lista completa para asegurar sincronización
-      await loadGuards();
-    } catch (err) {
-      setError('Error: ' + err.message);
-      console.error('Error detallado:', err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleEdit = (guard) => {
