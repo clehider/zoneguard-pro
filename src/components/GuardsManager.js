@@ -128,13 +128,12 @@ const GuardsManager = ({ zones = [] }) => {
           
           const guardDataToUpdate = {
               name: formData.name,
-              email: formData.email ? formData.email.toLowerCase() : '', // Validación agregada
+              email: formData.email ? formData.email.toLowerCase() : '',
               phone: formData.phone,
               status: formData.status,
-              assignedZone: formData.assignedZone || null // Aseguramos que siempre tenga un valor
+              assignedZone: formData.assignedZone || null // Aseguramos que se incluya la zona asignada
           };
   
-          // Validación adicional para el email
           if (!guardDataToUpdate.email) {
               throw new Error('El email es requerido');
           }
@@ -144,7 +143,6 @@ const GuardsManager = ({ zones = [] }) => {
           }
   
           if (editingId) {
-              // Verificar si el email ya existe para otro guardia
               const existingGuard = guards.find(g => 
                   g.email && g.email.toLowerCase() === guardDataToUpdate.email.toLowerCase() && 
                   g.id !== editingId
@@ -155,18 +153,18 @@ const GuardsManager = ({ zones = [] }) => {
               }
   
               await guardService.updateGuard(editingId, guardDataToUpdate);
+              await loadGuards(); // Recargar inmediatamente después de la actualización
               setSuccess('Guardia actualizado exitosamente');
           } else {
-              // Asegurarse de que la contraseña esté presente para nuevos guardias
               if (!guardDataToUpdate.password) {
                   throw new Error('La contraseña es requerida para nuevos guardias');
               }
-              const newGuard = await guardService.addGuard(guardDataToUpdate);
+              await guardService.addGuard(guardDataToUpdate);
+              await loadGuards(); // Recargar inmediatamente después de agregar
               setSuccess('Guardia agregado exitosamente');
           }
   
           resetForm();
-          await loadGuards(); // Recargar la lista después de una operación exitosa
       } catch (err) {
           setError('Error: ' + err.message);
           console.error('Error detallado:', err);
@@ -208,7 +206,7 @@ const GuardsManager = ({ zones = [] }) => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 flex flex-col h-screen overflow-y-auto">
       <h2 className="text-2xl font-bold mb-4">Gestión de Guardias</h2>
       
       {error && (
@@ -330,53 +328,56 @@ const GuardsManager = ({ zones = [] }) => {
         </div>
       </form>
 
-      <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
-        <table className="min-w-full table-auto">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2">Nombre</th>
-              <th className="px-4 py-2">Email</th>
-              <th className="px-4 py-2">Teléfono</th>
-              <th className="px-4 py-2">Zona Asignada</th>
-              <th className="px-4 py-2">Estado</th>
-              <th className="px-4 py-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {guards.map(guard => (
-              <tr key={guard.id} className="border-b">
-                <td className="px-4 py-2">{guard.name}</td>
-                <td className="px-4 py-2">{guard.email}</td>
-                <td className="px-4 py-2">{guard.phone}</td>
-                <td className="px-4 py-2">
-                  {zones.find(z => z.id === guard.assignedZone)?.name || 'Sin asignar'}
-                </td>
-                <td className="px-4 py-2">
-                  <span className={`px-2 py-1 rounded ${
-                    guard.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {guard.status === 'active' ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                <td className="px-4 py-2">
-                  <button
-                    onClick={() => handleEdit(guard)}
-                    className="mr-2 bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(guard.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Eliminar
-                  </button>
-                </td>
+      <div className="flex-1">
+        <div className="overflow-x-auto overflow-y-auto h-[calc(100vh-600px)] min-h-[300px]">
+          <table className="min-w-full table-auto">
+            <thead className="sticky top-0 bg-gray-100 z-10">
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2">Nombre</th>
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Teléfono</th>
+                <th className="px-4 py-2">Zona Asignada</th>
+                <th className="px-4 py-2">Estado</th>
+                <th className="px-4 py-2">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {guards.map(guard => (
+                <tr key={guard.id} className="border-b">
+                  <td className="px-4 py-2">{guard.name}</td>
+                  <td className="px-4 py-2">{guard.email}</td>
+                  <td className="px-4 py-2">{guard.phone}</td>
+                  <td className="px-4 py-2">
+                    {zones.find(z => z.id === guard.assignedZone)?.name || 'Sin asignar'}
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 rounded ${
+                      guard.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {guard.status === 'active' ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <button
+                      onClick={() => handleEdit(guard)}
+                      className="mr-2 bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDelete(guard.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    >
+                      Eliminar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
+      
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded-lg">
